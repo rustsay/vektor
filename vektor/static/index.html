@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Вектор — стратегия развития канала</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 28 L26 6' stroke='%23A3195B' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M15 6 H26 V17' fill='none' stroke='%23A3195B' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/" aria-label="Вектор — на главную">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 28 L26 6"/><path d="M15 6 H26 V17"/></svg>
+    <span>Вектор</span>
+  </a>
+  <span id="mode" class="mode" title="Режим работы агентов"></span>
+</header>
+
+<main>
+  <section class="intro" id="intro">
+    <h1>Куда расти вашему каналу</h1>
+    <p class="lead">Вектор собирает посты вашего канала и конкурентов, считает, что на самом деле работает,
+      и передаёт цифры команде ИИ-агентов. Агент-критик пропускает только те советы, которые подтверждаются данными.</p>
+  </section>
+
+  <form id="form" class="panel form" novalidate>
+    <fieldset>
+      <legend>Ваш канал</legend>
+      <div class="source" data-role="author"></div>
+    </fieldset>
+    <fieldset>
+      <legend>Конкуренты <span class="hint">до 5 каналов вашей ниши — необязательно, но с ними советы точнее</span></legend>
+      <div id="competitors"></div>
+      <button type="button" class="ghost" id="add-comp">Добавить конкурента</button>
+    </fieldset>
+    <div class="row-opts">
+      <label class="opt">Постов с канала
+        <select id="max-posts"><option>100</option><option selected>200</option><option>400</option></select>
+      </label>
+      <label class="opt" id="vk-token-wrap" hidden>Сервисный ключ VK
+        <input type="password" id="vk-token" placeholder="нужен для каналов VK" autocomplete="off">
+      </label>
+    </div>
+    <div class="actions">
+      <button type="submit" class="primary" id="run">Построить стратегию</button>
+      <button type="button" class="ghost" id="demo">Посмотреть на демо-данных</button>
+    </div>
+    <p class="form-error" id="form-error" role="alert" hidden></p>
+  </form>
+
+  <section id="progress" class="panel progress" hidden aria-live="polite">
+    <h2>Идёт анализ</h2>
+    <ol id="steps"></ol>
+  </section>
+
+  <div id="result" hidden></div>
+</main>
+
+<div id="tip" class="tip" role="tooltip" hidden></div>
+
+<footer class="foot">
+  Вектор анализирует только публичные данные. Индекс виральности — охват поста относительно медианы
+  15 предыдущих постов того же канала.
+</footer>
+
+<template id="source-tpl">
+  <div class="src-row">
+    <select class="platform" aria-label="Площадка">
+      <option value="telegram">Telegram</option>
+      <option value="vk">VK</option>
+      <option value="csv">CSV-файл</option>
+    </select>
+    <input class="ident" type="text" placeholder="@channel или t.me/channel" aria-label="Адрес канала">
+    <span class="csv-wrap" hidden>
+      <input class="csv-name" type="text" placeholder="Название канала" aria-label="Название канала">
+      <input class="csv-subs" type="number" min="0" placeholder="Подписчиков" aria-label="Подписчиков">
+      <label class="file-btn">Выбрать файл<input class="csv-file" type="file" accept=".csv,text/csv"></label>
+      <span class="csv-status"></span>
+    </span>
+    <button type="button" class="remove" aria-label="Убрать канал" hidden>×</button>
+  </div>
+</template>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

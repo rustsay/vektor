@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Вектор — стратегия развития канала</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #EEF2EF;
+  --grid: #D8E0DA;
+  --surface: #FBFCFB;
+  --ink: #16233A;
+  --ink-2: #4B5A6E;
+  --ink-3: #7C8899;
+  --route: #A3195B;          /* маджента аэронавигационных карт — направление, «выше нормы» */
+  --route-soft: #F3DCE8;
+  --sea: #3C6E8C;            /* «ниже нормы» */
+  --sea-soft: #DCE8EF;
+  --amber: #A86412;
+  --ok: #2F7A55;
+  --radius: 10px;
+  --display: "Unbounded", "Onest", system-ui, sans-serif;
+  --text: "Onest", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font: 16px/1.55 var(--text);
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 48px 48px;
+  background-attachment: fixed;
+}
+:focus-visible { outline: 2px solid var(--route); outline-offset: 2px; }
+a { color: var(--sea); }
+a.ghost { text-decoration: none; display: inline-block; }
+
+.top, main, .foot { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+.top { display: flex; align-items: center; justify-content: space-between; padding-top: 20px; padding-bottom: 8px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink);
+  font: 700 20px/1 var(--display); letter-spacing: -0.01em; }
+.brand svg { width: 26px; height: 26px; fill: none; stroke: var(--route); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.mode { font-size: 13px; color: var(--ink-2); background: var(--surface); border: 1px solid var(--grid);
+  padding: 4px 10px; border-radius: 99px; }
+.mode.on::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--ok); margin-right: 6px; vertical-align: 1px; }
+
+.intro { padding: 48px 0 28px; max-width: 720px; }
+h1 { font: 700 clamp(32px, 6vw, 60px)/1.04 var(--display); letter-spacing: -0.03em; margin: 0 0 18px; }
+h2 { font: 700 22px/1.2 var(--display); letter-spacing: -0.015em; margin: 0 0 14px; }
+h3 { font-size: 17px; margin: 0 0 6px; }
+.lead { font-size: 18px; color: var(--ink-2); margin: 0; max-width: 62ch; }
+
+.panel { background: var(--surface); border: 1px solid var(--grid); border-radius: var(--radius); padding: 24px; }
+.form fieldset { border: 0; padding: 0; margin: 0 0 22px; }
+.form legend { font-weight: 600; margin-bottom: 10px; padding: 0; }
+.hint { font-weight: 400; color: var(--ink-3); font-size: 14px; margin-left: 6px; }
+.src-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+.csv-wrap { display: contents; }
+.csv-wrap[hidden] { display: none; }
+input[type=text], input[type=number], input[type=password], select {
+  font: inherit; color: var(--ink); background: #fff; border: 1px solid #C5CFC8; border-radius: 6px;
+  padding: 9px 11px; min-height: 42px;
+}
+.ident { flex: 1 1 240px; }
+.csv-name { flex: 1 1 160px; }
+.csv-subs { width: 140px; }
+.file-btn { border: 1px dashed var(--ink-3); border-radius: 6px; padding: 9px 12px; cursor: pointer; font-size: 15px; }
+.file-btn input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.file-btn:focus-within { outline: 2px solid var(--route); }
+.csv-status { font-size: 14px; color: var(--ink-2); }
+.remove { border: 0; background: none; font-size: 24px; line-height: 1; color: var(--ink-3); cursor: pointer; padding: 4px 8px; }
+.row-opts { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.opt { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--ink-2); }
+.actions { display: flex; gap: 12px; flex-wrap: wrap; }
+button { font: inherit; cursor: pointer; }
+.primary { background: var(--route); color: #fff; border: 0; border-radius: 6px; padding: 12px 22px; font-weight: 600; }
+.primary:hover { background: #8a1550; }
+.primary:disabled { opacity: .6; cursor: progress; }
+.ghost { background: transparent; color: var(--ink); border: 1px solid #B9C4BD; border-radius: 6px; padding: 11px 18px; }
+.ghost:hover { border-color: var(--ink); }
+.form-error { color: #9B1C1C; margin: 14px 0 0; }
+
+.progress { margin-top: 20px; }
+.progress ol { margin: 0; padding-left: 20px; color: var(--ink-2); }
+.progress li { margin: 4px 0; }
+.progress li:last-child { color: var(--ink); font-weight: 500; }
+.progress li .t { color: var(--ink-3); font-variant-numeric: tabular-nums; margin-right: 8px; }
+
+/* ---------- результат ---------- */
+#result { margin-top: 36px; }
+.result-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.result-head h2 { font-size: clamp(24px, 4vw, 36px); margin: 0; }
+.result-head .sub { color: var(--ink-2); margin: 6px 0 0; }
+.banner { background: #FFF7E6; border: 1px solid #F0D9A8; color: #6B4A10; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 15px; }
+
+.compass { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 0; padding: 0; overflow: hidden; }
+.compass-fig { background: #F6F8F6; border-right: 1px solid var(--grid); padding: 16px; }
+.compass-fig svg { width: 100%; height: auto; display: block; }
+.compass-text { padding: 28px; }
+.compass-text .summary { font-size: 18px; margin: 0 0 18px; }
+.kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 20px; margin: 0; }
+.kpis dt { font-size: 13px; color: var(--ink-2); }
+.kpis dd { margin: 2px 0 0; font: 700 22px/1.2 var(--display); font-variant-numeric: tabular-nums; }
+.kpis dd small { font: 400 13px var(--text); color: var(--ink-3); margin-left: 4px; }
+
+.arrow-path { stroke: var(--route); stroke-width: 3; fill: none; stroke-linecap: round; }
+.arrow-head { fill: var(--route); }
+.ring { fill: none; stroke: var(--grid); stroke-dasharray: 3 5; }
+.dir-label { font: 600 13px var(--text); fill: var(--ink); }
+.dir-num { font: 700 13px var(--display); fill: #fff; }
+@media (prefers-reduced-motion: no-preference) {
+  .draw .arrow-path { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: draw 1.1s cubic-bezier(.3,.7,.2,1) forwards; }
+  .draw .arrow-head, .draw .dir-tag { opacity: 0; animation: appear .3s ease-out forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes appear { to { opacity: 1; } }
+}
+
+.section { margin-top: 44px; }
+.section > .sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.section > .sec-head p { margin: 0; color: var(--ink-2); max-width: 62ch; }
+
+.directions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.direction { border-top: 3px solid var(--route); }
+.direction .num { font: 700 30px/1 var(--display); color: var(--route); margin-bottom: 10px; }
+.direction p { margin: 0 0 10px; color: var(--ink-2); font-size: 15px; }
+.direction ul { margin: 0 0 12px; padding-left: 18px; }
+.direction .kpi { font-size: 14px; color: var(--ink); background: var(--paper); border-radius: 6px; padding: 8px 10px; margin-bottom: 12px; }
+
+.fact { font: 600 12px/1 var(--text); color: var(--route); background: var(--route-soft); border: 0;
+  border-radius: 4px; padding: 5px 7px; margin: 0 4px 4px 0; font-variant-numeric: tabular-nums; }
+.fact:hover, .fact[aria-expanded=true] { background: var(--route); color: #fff; }
+.tip { position: absolute; z-index: 20; max-width: 340px; background: var(--ink); color: #fff; font-size: 14px;
+  line-height: 1.45; padding: 10px 12px; border-radius: 8px; box-shadow: 0 8px 24px rgba(22,35,58,.25); }
+.tip .c { display: block; margin-top: 6px; color: #C7D2E0; font-size: 12px; }
+
+/* конвейер агентов */
+.pipeline { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) 28px minmax(0, 1fr); gap: 12px; align-items: stretch; }
+.agent h3 { display: flex; justify-content: space-between; gap: 8px; }
+.agent .temp { font-weight: 400; font-size: 13px; color: var(--ink-3); white-space: nowrap; }
+.agent .meta { font-size: 13px; color: var(--ink-3); margin: 0 0 10px; }
+.agent ul { list-style: none; padding: 0; margin: 0; font-size: 14px; }
+.agent li { padding: 6px 0 6px 22px; border-top: 1px solid var(--grid); position: relative; }
+.agent li::before { position: absolute; left: 0; top: 6px; font-weight: 700; }
+.agent li.acc::before { content: "✓"; color: var(--ok); }
+.agent li.rej { color: var(--ink-3); text-decoration: line-through; }
+.agent li.rej::before { content: "✕"; color: #9B1C1C; text-decoration: none; }
+.flow-arrow { display: flex; align-items: center; justify-content: center; color: var(--route); font-size: 22px; }
+.critic { border: 2px solid var(--route); }
+.critic .big { font: 700 34px/1 var(--display); }
+.critic .big span { color: var(--ink-3); font-size: 18px; }
+.rejected { margin-top: 14px; }
+.rejected summary { cursor: pointer; color: var(--ink-2); }
+.rejected li { margin: 6px 0; }
+.rejected s { color: var(--ink-3); }
+
+/* контент-план */
+.plan { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; }
+.plan-item { background: var(--surface); border: 1px solid var(--grid); border-radius: 8px; padding: 12px; font-size: 14px; }
+.plan-item .day { font: 700 15px var(--display); color: var(--route); }
+.plan-item .when { color: var(--ink-3); font-size: 13px; margin-bottom: 6px; }
+.plan-item .topic { font-weight: 600; margin-bottom: 4px; }
+.plan-item .hook { color: var(--ink-2); }
+
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.exp { margin: 0; padding-left: 18px; }
+.exp li { margin-bottom: 12px; }
+.exp .k { color: var(--ink-3); font-size: 14px; }
+
+/* графики */
+.charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.chart h3 { margin-bottom: 2px; }
+.chart .cap { font-size: 13px; color: var(--ink-3); margin: 0 0 12px; }
+.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.axis { font: 12px var(--text); fill: var(--ink-3); }
+.line { fill: none; stroke: var(--ink); stroke-width: 2; }
+.area { fill: var(--route-soft); opacity: .7; }
+.dot { fill: var(--route); }
+.div-row { display: grid; grid-template-columns: 96px 1fr 104px; align-items: center; gap: 10px; font-size: 14px; margin: 5px 0; }
+.div-row .lbl { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.div-row .val { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.div-row .val small { color: var(--ink-3); }
+.div-track { position: relative; height: 16px; }
+.div-track::before { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--ink); }
+.div-bar { position: absolute; top: 2px; height: 12px; border-radius: 2px; }
+.div-bar.up { background: var(--route); }
+.div-bar.down { background: var(--sea); }
+.div-row.thin { opacity: .45; }
+.div-scale { display: grid; grid-template-columns: 96px 1fr 104px; gap: 10px; font-size: 12px; color: var(--ink-3); }
+.div-scale span:nth-child(2) { display: flex; justify-content: space-between; }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+th { font-weight: 600; color: var(--ink-2); font-size: 13px; }
+td.n, th.n { text-align: right; }
+tr.me td { background: var(--route-soft); font-weight: 600; }
+.table-wrap { overflow-x: auto; }
+.tag { display: inline-block; font-size: 12px; padding: 2px 7px; border-radius: 4px; margin-left: 6px; }
+.tag.gap { background: #FCEBD3; color: var(--amber); }
+.tag.strong { background: var(--route-soft); color: var(--route); }
+.tag.weak { background: var(--sea-soft); color: var(--sea); }
+.share { display: inline-block; height: 8px; background: var(--ink-2); border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+.share.c { background: var(--ink-3); }
+
+.posts { list-style: none; padding: 0; margin: 0; }
+.posts li { padding: 12px 0; border-top: 1px solid var(--grid); }
+.posts .v { font: 700 16px var(--display); margin-right: 8px; }
+.posts .v.up { color: var(--route); }
+.posts .v.down { color: var(--sea); }
+.posts .m { color: var(--ink-3); font-size: 13px; }
+.posts .s { margin: 4px 0 0; font-size: 15px; }
+
+.facts-list { columns: 2; column-gap: 28px; font-size: 14px; padding-left: 0; list-style: none; }
+.facts-list li { break-inside: avoid; margin-bottom: 10px; }
+.facts-list b { color: var(--route); margin-right: 4px; }
+.facts-list .c { color: var(--ink-3); }
+
+.foot { color: var(--ink-3); font-size: 13px; padding-top: 48px; padding-bottom: 40px; }
+
+@media (max-width: 900px) {
+  .compass, .directions, .two, .charts { grid-template-columns: 1fr; }
+  .compass-fig { border-right: 0; border-bottom: 1px solid var(--grid); }
+  .pipeline { grid-template-columns: 1fr; }
+  .flow-arrow { transform: rotate(90deg); height: 24px; }
+  .plan { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .facts-list { columns: 1; }
+}
+@media (max-width: 520px) {
+  .top, main, .foot { padding-left: 16px; padding-right: 16px; }
+  .panel { padding: 18px; }
+  .compass-text { padding: 20px; }
+  .div-row, .div-scale { grid-template-columns: 72px 1fr 96px; gap: 8px; }
+  .plan { grid-template-columns: 1fr; }
+}
+
+</style>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 28 L26 6' stroke='%23A3195B' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M15 6 H26 V17' fill='none' stroke='%23A3195B' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/" aria-label="Вектор — на главную">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 28 L26 6"/><path d="M15 6 H26 V17"/></svg>
+    <span>Вектор</span>
+  </a>
+  <span id="mode" class="mode" title="Режим работы агентов"></span>
+</header>
+
+<main>
+  <section class="intro" id="intro">
+    <h1>Куда расти вашему каналу</h1>
+    <p class="lead">Вектор собирает посты вашего канала и конкурентов, считает, что на самом деле работает,
+      и передаёт цифры команде ИИ-агентов. Агент-критик пропускает только те советы, которые подтверждаются данными.</p>
+  </section>
+
+  <form id="form" class="panel form" novalidate>
+    <fieldset>
+      <legend>Ваш канал</legend>
+      <div class="source" data-role="author"></div>
+    </fieldset>
+    <fieldset>
+      <legend>Конкуренты <span class="hint">до 5 каналов вашей ниши — необязательно, но с ними советы точнее</span></legend>
+      <div id="competitors"></div>
+      <button type="button" class="ghost" id="add-comp">Добавить конкурента</button>
+    </fieldset>
+    <div class="row-opts">
+      <label class="opt">Постов с канала
+        <select id="max-posts"><option>100</option><option selected>200</option><option>400</option></select>
+      </label>
+      <label class="opt" id="vk-token-wrap" hidden>Сервисный ключ VK
+        <input type="password" id="vk-token" placeholder="нужен для каналов VK" autocomplete="off">
+      </label>
+    </div>
+    <div class="actions">
+      <button type="submit" class="primary" id="run">Построить стратегию</button>
+      <button type="button" class="ghost" id="demo">Посмотреть на демо-данных</button>
+    </div>
+    <p class="form-error" id="form-error" role="alert" hidden></p>
+  </form>
+
+  <section id="progress" class="panel progress" hidden aria-live="polite">
+    <h2>Идёт анализ</h2>
+    <ol id="steps"></ol>
+  </section>
+
+  <div id="result" hidden></div>
+</main>
+
+<div id="tip" class="tip" role="tooltip" hidden></div>
+
+<footer class="foot">
+  Вектор анализирует только публичные данные. Индекс виральности — охват поста относительно медианы
+  15 предыдущих постов того же канала.
+</footer>
+
+<template id="source-tpl">
+  <div class="src-row">
+    <select class="platform" aria-label="Площадка">
+      <option value="telegram">Telegram</option>
+      <option value="vk">VK</option>
+      <option value="csv">CSV-файл</option>
+    </select>
+    <input class="ident" type="text" placeholder="@channel или t.me/channel" aria-label="Адрес канала">
+    <span class="csv-wrap" hidden>
+      <input class="csv-name" type="text" placeholder="Название канала" aria-label="Название канала">
+      <input class="csv-subs" type="number" min="0" placeholder="Подписчиков" aria-label="Подписчиков">
+      <label class="file-btn">Выбрать файл<input class="csv-file" type="file" accept=".csv,text/csv"></label>
+      <span class="csv-status"></span>
+    </span>
+    <button type="button" class="remove" aria-label="Убрать канал" hidden>×</button>
+  </div>
+</template>
+
+<script>window.VEKTOR_STATIC = {"result": {"analysis": {"author": {"channel": {"platform": "demo", "channel": "kod_i_kofe", "title": "Код и кофе (демо)", "subscribers": 4200, "posts": 152, "role": "author", "source_note": "синтетические демо-данные"}, "empty": false, "n_posts": 152, "n_analyzable": 150, "median_views": 1668, "err": 0.3971, "median_er": 0.0375, "rhythm": {"posts_per_week": 6.0, "median_gap_hours": 20.5, "max_gap_days": 6.1, "period_days": 179}, "trend": {"monthly_change": 0.064, "monthly_change_ci": [0.021, 0.108], "significant": true, "weekly": [{"week": "2026-05-03", "median_views": 1232}, {"week": "2026-05-10", "median_views": 871}, {"week": "2026-05-17", "median_views": 2128}, {"week": "2026-05-24", "median_views": 1330}, {"week": "2026-05-31", "median_views": 2057}, {"week": "2026-06-07", "median_views": 1672}, {"week": "2026-06-14", "median_views": 1380}, {"week": "2026-06-21", "median_views": 1338}, {"week": "2026-06-28", "median_views": 1915}, {"week": "2026-07-05", "median_views": 1624}, {"week": "2026-07-12", "median_views": 1485}, {"week": "2026-07-19", "median_views": 1538}, {"week": "2026-07-26", "median_views": 1958}, {"week": "2026-08-02", "median_views": 1425}, {"week": "2026-08-09", "median_views": 1373}, {"week": "2026-08-16", "median_views": 1601}, {"week": "2026-08-23", "median_views": 2232}, {"week": "2026-08-30", "median_views": 1423}, {"week": "2026-09-06", "median_views": 1864}, {"week": "2026-09-13", "median_views": 2982}, {"week": "2026-09-20", "median_views": 1440}, {"week": "2026-09-27", "median_views": 1324}, {"week": "2026-10-04", "median_views": 1420}, {"week": "2026-10-11", "median_views": 2261}, {"week": "2026-10-18", "median_views": 2120}, {"week": "2026-10-25", "median_views": 2612}]}, "by_weekday": [{"key": "Пн", "raw_key": 0, "n": 21, "share": 0.14, "median_virality": 1.3, "median_views": 2071, "p_value": 0.0595, "reliable": true}, {"key": "Вт", "raw_key": 1, "n": 20, "share": 0.133, "median_virality": 1.22, "median_views": 2144, "p_value": 0.0463, "reliable": true}, {"key": "Ср", "raw_key": 2, "n": 20, "share": 0.133, "median_virality": 1.28, "median_views": 1892, "p_value": 0.0978, "reliable": true}, {"key": "Чт", "raw_key": 3, "n": 18, "share": 0.12, "median_virality": 1.14, "median_views": 1917, "p_value": 0.4931, "reliable": true}, {"key": "Пт", "raw_key": 4, "n": 34, "share": 0.227, "median_virality": 0.92, "median_views": 1482, "p_value": 0.2064, "reliable": true}, {"key": "Сб", "raw_key": 5, "n": 18, "share": 0.12, "median_virality": 0.67, "median_views": 923, "p_value": 0.0046, "reliable": true}, {"key": "Вс", "raw_key": 6, "n": 19, "share": 0.127, "median_virality": 0.86, "median_views": 1396, "p_value": 0.0443, "reliable": true}], "by_slot": [{"key": "00–06", "raw_key": "00–06", "n": 1, "share": 0.007, "median_virality": 0.52, "median_views": 871, "p_value": null, "reliable": false}, {"key": "06–09", "raw_key": "06–09", "n": 17, "share": 0.113, "median_virality": 0.75, "median_views": 1184, "p_value": 0.0221, "reliable": true}, {"key": "09–12", "raw_key": "09–12", "n": 34, "share": 0.227, "median_virality": 1.15, "median_views": 1686, "p_value": 0.4361, "reliable": true}, {"key": "12–15", "raw_key": "12–15", "n": 14, "share": 0.093, "median_virality": 1.07, "median_views": 1798, "p_value": 0.9408, "reliable": true}, {"key": "15–18", "raw_key": "15–18", "n": 28, "share": 0.187, "median_virality": 0.92, "median_views": 1513, "p_value": 0.2196, "reliable": true}, {"key": "18–21", "raw_key": "18–21", "n": 37, "share": 0.247, "median_virality": 1.4, "median_views": 2183, "p_value": 0.0001, "reliable": true}, {"key": "21–24", "raw_key": "21–24", "n": 19, "share": 0.127, "median_virality": 0.83, "median_views": 1434, "p_value": 0.0356, "reliable": true}], "by_media": [{"key": "фото", "raw_key": "photo", "n": 46, "share": 0.307, "median_virality": 1.07, "median_views": 1673, "p_value": 0.5614, "reliable": true}, {"key": "текст", "raw_key": "text", "n": 89, "share": 0.593, "median_virality": 0.95, "median_views": 1477, "p_value": 0.0292, "reliable": true}, {"key": "видео", "raw_key": "video", "n": 15, "share": 0.1, "median_virality": 1.69, "median_views": 2801, "p_value": 0.0, "reliable": true}], "by_length": [{"key": "до 300 зн.", "raw_key": "до 300 зн.", "n": 108, "share": 0.72, "median_virality": 1.08, "median_views": 1781, "p_value": 0.5205, "reliable": true}, {"key": "300–1000 зн.", "raw_key": "300–1000 зн.", "n": 7, "share": 0.047, "median_virality": 1.2, "median_views": 1481, "p_value": 0.3479, "reliable": true}, {"key": "от 1000 зн.", "raw_key": "от 1000 зн.", "n": 35, "share": 0.233, "median_virality": 0.96, "median_views": 1396, "p_value": 0.2462, "reliable": true}], "top_posts": [{"post_id": "84", "date": "04.08.2026 20:46", "views": 4760, "virality": 3.34, "media_type": "видео", "snippet": "Синдром самозванца у разработчиков и как с ним жить. Режим дня, который помогает учиться программированию после работы. Делюсь тем, что сам проверил на практике.", "url": ""}, {"post_id": "9", "date": "12.05.2026 19:16", "views": 3316, "virality": 2.98, "media_type": "текст", "snippet": "Автоматизация отчётов с помощью нейросети и пары строк кода. Промпты для ChatGPT, которые реально экономят время разработчика. Собрал агента на LLM, который автоматизирует рутину в почте. Делюсь тем, что сам проверил на …", "url": ""}, {"post_id": "78", "date": "30.07.2026 20:59", "views": 4311, "virality": 2.68, "media_type": "текст", "snippet": "Собрал агента на LLM, который автоматизирует рутину в почте. Делюсь тем, что сам проверил на практике.", "url": ""}, {"post_id": "94", "date": "20.08.2026 09:17", "views": 3539, "virality": 2.37, "media_type": "текст", "snippet": "Как нейросети меняют профессию программиста в этом году. Нейросети уже пишут код быстрее джуна, но им нужен контроль. Собрал агента на LLM, который автоматизирует рутину в почте. Пишите в комментариях, сталкивались ли вы…", "url": ""}, {"post_id": "99", "date": "26.08.2026 21:41", "views": 4690, "virality": 2.31, "media_type": "видео", "snippet": "Как вырасти с junior до middle за год: личный опыт. Повышение зарплаты: как говорить с руководителем. Сохраняйте, чтобы не потерять. Карьерный рост разработчика и роль менторства. Грейды в компаниях: чем middle отличаетс…", "url": ""}], "flop_posts": [{"post_id": "103", "date": "29.08.2026 11:42", "views": 781, "virality": 0.39, "media_type": "фото", "snippet": "Режим дня, который помогает учиться программированию после работы. Продуктивность без фанатизма: три привычки, которые работают. Пишите в комментариях, сталкивались ли вы с таким.", "url": ""}, {"post_id": "72", "date": "23.07.2026 22:17", "views": 643, "virality": 0.4, "media_type": "фото", "snippet": "Синдром самозванца у разработчиков и как с ним жить. Делюсь тем, что сам проверил на практике.", "url": ""}, {"post_id": "121", "date": "25.09.2026 16:30", "views": 756, "virality": 0.41, "media_type": "текст", "snippet": "Выгорание у программистов: как я его заметил и что сделал. Делюсь тем, что сам проверил на практике. Продуктивность без фанатизма: три привычки, которые работают. Синдром самозванца у разработчиков и как с ним жить. Отды…", "url": ""}, {"post_id": "105", "date": "30.08.2026 16:43", "views": 836, "virality": 0.41, "media_type": "текст", "snippet": "Виртуальное окружение python: почему без него нельзя. Делюсь тем, что сам проверил на практике.", "url": ""}, {"post_id": "108", "date": "06.09.2026 08:39", "views": 848, "virality": 0.42, "media_type": "текст", "snippet": "Как не бросить учёбу через месяц: про мотивацию и дисциплину. Режим дня, который помогает учиться программированию после работы. Сохраняйте, чтобы не потерять.", "url": ""}]}, "competitors": [{"channel": {"platform": "demo", "channel": "jun_na_starte", "title": "Джун на старте (демо)", "subscribers": 9800, "posts": 231, "role": "competitor", "source_note": "синтетические демо-данные"}, "empty": false, "n_posts": 231, "n_analyzable": 226, "median_views": 4179, "err": 0.4265, "median_er": 0.0409, "rhythm": {"posts_per_week": 9.2, "median_gap_hours": 13.2, "max_gap_days": 4.0, "period_days": 176}, "trend": {"monthly_change": 0.06, "monthly_change_ci": [0.026, 0.092], "significant": true, "weekly": [{"week": "2026-05-03", "median_views": 4089}, {"week": "2026-05-10", "median_views": 3293}, {"week": "2026-05-17", "median_views": 3802}, {"week": "2026-05-24", "median_views": 2630}, {"week": "2026-05-31", "median_views": 3415}, {"week": "2026-06-07", "median_views": 4100}, {"week": "2026-06-14", "median_views": 3969}, {"week": "2026-06-21", "median_views": 5270}, {"week": "2026-06-28", "median_views": 5264}, {"week": "2026-07-05", "median_views": 2834}, {"week": "2026-07-12", "median_views": 4316}, {"week": "2026-07-19", "median_views": 4192}, {"week": "2026-07-26", "median_views": 4306}, {"week": "2026-08-02", "median_views": 3897}, {"week": "2026-08-09", "median_views": 4243}, {"week": "2026-08-16", "median_views": 4096}, {"week": "2026-08-23", "median_views": 4173}, {"week": "2026-08-30", "median_views": 3812}, {"week": "2026-09-06", "median_views": 3741}, {"week": "2026-09-13", "median_views": 4817}, {"week": "2026-09-20", "median_views": 4497}, {"week": "2026-09-27", "median_views": 5931}, {"week": "2026-10-04", "median_views": 3872}, {"week": "2026-10-11", "median_views": 5739}, {"week": "2026-10-18", "median_views": 4198}, {"week": "2026-10-25", "median_views": 8233}]}, "by_weekday": [{"key": "Пн", "raw_key": 0, "n": 35, "share": 0.155, "median_virality": 1.16, "median_views": 4736, "p_value": 0.1753, "reliable": true}, {"key": "Вт", "raw_key": 1, "n": 32, "share": 0.142, "median_virality": 1.17, "median_views": 4434, "p_value": 0.0675, "reliable": true}, {"key": "Ср", "raw_key": 2, "n": 28, "share": 0.124, "median_virality": 0.95, "median_views": 3902, "p_value": 0.7075, "reliable": true}, {"key": "Чт", "raw_key": 3, "n": 42, "share": 0.186, "median_virality": 1.22, "median_views": 4958, "p_value": 0.0234, "reliable": true}, {"key": "Пт", "raw_key": 4, "n": 23, "share": 0.102, "median_virality": 1.0, "median_views": 3849, "p_value": 0.7239, "reliable": true}, {"key": "Сб", "raw_key": 5, "n": 33, "share": 0.146, "median_virality": 0.8, "median_views": 3301, "p_value": 0.0028, "reliable": true}, {"key": "Вс", "raw_key": 6, "n": 33, "share": 0.146, "median_virality": 0.86, "median_views": 3251, "p_value": 0.0059, "reliable": true}], "by_slot": [{"key": "00–06", "raw_key": "00–06", "n": 1, "share": 0.004, "median_virality": 0.78, "median_views": 4407, "p_value": null, "reliable": false}, {"key": "06–09", "raw_key": "06–09", "n": 22, "share": 0.097, "median_virality": 0.75, "median_views": 3000, "p_value": 0.0006, "reliable": true}, {"key": "09–12", "raw_key": "09–12", "n": 45, "share": 0.199, "median_virality": 1.15, "median_views": 4783, "p_value": 0.0832, "reliable": true}, {"key": "12–15", "raw_key": "12–15", "n": 36, "share": 0.159, "median_virality": 0.97, "median_views": 3863, "p_value": 0.3804, "reliable": true}, {"key": "15–18", "raw_key": "15–18", "n": 52, "share": 0.23, "median_virality": 1.09, "median_views": 4544, "p_value": 0.3354, "reliable": true}, {"key": "18–21", "raw_key": "18–21", "n": 46, "share": 0.204, "median_virality": 1.15, "median_views": 4874, "p_value": 0.0182, "reliable": true}, {"key": "21–24", "raw_key": "21–24", "n": 24, "share": 0.106, "median_virality": 0.87, "median_views": 3185, "p_value": 0.033, "reliable": true}], "by_media": [{"key": "фото", "raw_key": "photo", "n": 79, "share": 0.35, "median_virality": 0.89, "median_views": 3765, "p_value": 0.0037, "reliable": true}, {"key": "текст", "raw_key": "text", "n": 94, "share": 0.416, "median_virality": 0.93, "median_views": 3910, "p_value": 0.0189, "reliable": true}, {"key": "видео", "raw_key": "video", "n": 53, "share": 0.235, "median_virality": 1.52, "median_views": 5931, "p_value": 0.0, "reliable": true}], "by_length": [{"key": "до 300 зн.", "raw_key": "до 300 зн.", "n": 166, "share": 0.735, "median_virality": 1.1, "median_views": 4443, "p_value": 0.0, "reliable": true}, {"key": "300–1000 зн.", "raw_key": "300–1000 зн.", "n": 16, "share": 0.071, "median_virality": 0.84, "median_views": 3619, "p_value": 0.0684, "reliable": true}, {"key": "от 1000 зн.", "raw_key": "от 1000 зн.", "n": 44, "share": 0.195, "median_virality": 0.78, "median_views": 3403, "p_value": 0.0008, "reliable": true}], "top_posts": [{"post_id": "119", "date": "21.07.2026 19:21", "views": 15826, "virality": 3.81, "media_type": "видео", "snippet": "Разбираю вопросы с собеседования на позицию python-разработчика. Сохраняйте, чтобы не потерять.", "url": ""}, {"post_id": "43", "date": "29.05.2026 15:28", "views": 10221, "virality": 3.67, "media_type": "видео", "snippet": "Заказчик пропал после сдачи проекта — как защититься на фрилансе. Пишите в комментариях, сталкивались ли вы с таким.", "url": ""}, {"post_id": "163", "date": "28.08.2026 10:01", "views": 12756, "virality": 3.06, "media_type": "видео", "snippet": "Как оценить проект на фрилансе и не продешевить. Пишите в комментариях, сталкивались ли вы с таким.", "url": ""}, {"post_id": "111", "date": "18.07.2026 16:21", "views": 9662, "virality": 2.56, "media_type": "видео", "snippet": "Как вырасти с junior до middle за год: личный опыт. Сохраняйте, чтобы не потерять.", "url": ""}, {"post_id": "49", "date": "02.06.2026 20:47", "views": 7605, "virality": 2.52, "media_type": "видео", "snippet": "Фриланс или офис: честное сравнение денег и свободы. Портфолио для фриланса: что показывать клиентам. Фриланс для разработчика: где искать первых заказчиков. Делюсь тем, что сам проверил на практике.", "url": ""}], "flop_posts": [{"post_id": "57", "date": "06.06.2026 07:17", "views": 1408, "virality": 0.34, "media_type": "фото", "snippet": "Заказчик пропал после сдачи проекта — как защититься на фрилансе. Делюсь тем, что сам проверил на практике.", "url": ""}, {"post_id": "84", "date": "26.06.2026 19:36", "views": 1874, "virality": 0.36, "media_type": "текст", "snippet": "Пятница, прод упал, а ты уже в такси. Когда тимлид говорит, что задача на пять минут. Пятничный мем: когда деплой в прод в шесть вечера. Делюсь тем, что сам проверил на практике. Баг, который нашёл тестировщик, а исправл…", "url": ""}, {"post_id": "63", "date": "12.06.2026 14:38", "views": 1805, "virality": 0.36, "media_type": "фото", "snippet": "Виртуальное окружение python: почему без него нельзя. Делюсь тем, что сам проверил на практике.", "url": ""}, {"post_id": "95", "date": "04.07.2026 23:42", "views": 1509, "virality": 0.36, "media_type": "текст", "snippet": "Полезная библиотека python, о которой мало кто знает. Pandas: как ускорить обработку таблицы в десять раз. Как устроены декораторы в python и зачем они нужны в коде. Пишите в комментариях, сталкивались ли вы с таким. Ген…", "url": ""}, {"post_id": "64", "date": "13.06.2026 07:40", "views": 2010, "virality": 0.4, "media_type": "фото", "snippet": "Карьерный рост разработчика и роль менторства. Повышение зарплаты: как говорить с руководителем. Зарплаты в IT в этом году: что изменилось на рынке. Сохраняйте, чтобы не потерять. Карьерный рост разработчика и роль менто…", "url": ""}]}, {"channel": {"platform": "demo", "channel": "senior_v_dele", "title": "Senior в деле (демо)", "subscribers": 15300, "posts": 180, "role": "competitor", "source_note": "синтетические демо-данные"}, "empty": false, "n_posts": 180, "n_analyzable": 179, "median_views": 5863, "err": 0.3832, "median_er": 0.0382, "rhythm": {"posts_per_week": 7.1, "median_gap_hours": 19.2, "max_gap_days": 4.7, "period_days": 177}, "trend": {"monthly_change": 0.021, "monthly_change_ci": [-0.008, 0.05], "significant": false, "weekly": [{"week": "2026-05-03", "median_views": 5811}, {"week": "2026-05-10", "median_views": 5301}, {"week": "2026-05-17", "median_views": 5196}, {"week": "2026-05-24", "median_views": 5355}, {"week": "2026-05-31", "median_views": 5143}, {"week": "2026-06-07", "median_views": 6228}, {"week": "2026-06-14", "median_views": 5279}, {"week": "2026-06-21", "median_views": 6901}, {"week": "2026-06-28", "median_views": 5863}, {"week": "2026-07-05", "median_views": 7178}, {"week": "2026-07-12", "median_views": 5013}, {"week": "2026-07-19", "median_views": 9408}, {"week": "2026-07-26", "median_views": 6385}, {"week": "2026-08-02", "median_views": 5230}, {"week": "2026-08-09", "median_views": 4930}, {"week": "2026-08-16", "median_views": 4716}, {"week": "2026-08-23", "median_views": 6239}, {"week": "2026-08-30", "median_views": 5656}, {"week": "2026-09-06", "median_views": 6562}, {"week": "2026-09-13", "median_views": 7920}, {"week": "2026-09-20", "median_views": 5911}, {"week": "2026-09-27", "median_views": 6293}, {"week": "2026-10-04", "median_views": 6631}, {"week": "2026-10-11", "median_views": 5681}, {"week": "2026-10-18", "median_views": 7663}]}, "by_weekday": [{"key": "Пн", "raw_key": 0, "n": 21, "share": 0.117, "median_virality": 0.93, "median_views": 5714, "p_value": 0.9946, "reliable": true}, {"key": "Вт", "raw_key": 1, "n": 25, "share": 0.14, "median_virality": 1.01, "median_views": 5997, "p_value": 0.7597, "reliable": true}, {"key": "Ср", "raw_key": 2, "n": 29, "share": 0.162, "median_virality": 1.16, "median_views": 6200, "p_value": 0.1363, "reliable": true}, {"key": "Чт", "raw_key": 3, "n": 31, "share": 0.173, "median_virality": 0.97, "median_views": 5927, "p_value": 0.1778, "reliable": true}, {"key": "Пт", "raw_key": 4, "n": 28, "share": 0.156, "median_virality": 1.2, "median_views": 7177, "p_value": 0.0266, "reliable": true}, {"key": "Сб", "raw_key": 5, "n": 23, "share": 0.128, "median_virality": 0.65, "median_views": 4001, "p_value": 0.0, "reliable": true}, {"key": "Вс", "raw_key": 6, "n": 22, "share": 0.123, "median_virality": 0.97, "median_views": 4974, "p_value": 0.6149, "reliable": true}], "by_slot": [{"key": "06–09", "raw_key": "06–09", "n": 24, "share": 0.134, "median_virality": 0.84, "median_views": 4539, "p_value": 0.0189, "reliable": true}, {"key": "09–12", "raw_key": "09–12", "n": 29, "share": 0.162, "median_virality": 0.9, "median_views": 5741, "p_value": 0.4121, "reliable": true}, {"key": "12–15", "raw_key": "12–15", "n": 29, "share": 0.162, "median_virality": 1.02, "median_views": 5939, "p_value": 0.517, "reliable": true}, {"key": "15–18", "raw_key": "15–18", "n": 49, "share": 0.274, "median_virality": 0.97, "median_views": 5648, "p_value": 0.7722, "reliable": true}, {"key": "18–21", "raw_key": "18–21", "n": 37, "share": 0.207, "median_virality": 1.2, "median_views": 7250, "p_value": 0.0024, "reliable": true}, {"key": "21–24", "raw_key": "21–24", "n": 11, "share": 0.061, "median_virality": 0.98, "median_views": 5467, "p_value": 0.3261, "reliable": true}], "by_media": [{"key": "фото", "raw_key": "photo", "n": 45, "share": 0.251, "median_virality": 1.02, "median_views": 6086, "p_value": 0.1131, "reliable": true}, {"key": "текст", "raw_key": "text", "n": 99, "share": 0.553, "median_virality": 0.91, "median_views": 5287, "p_value": 0.0, "reliable": true}, {"key": "видео", "raw_key": "video", "n": 35, "share": 0.196, "median_virality": 1.41, "median_views": 8815, "p_value": 0.0007, "reliable": true}], "by_length": [{"key": "до 300 зн.", "raw_key": "до 300 зн.", "n": 143, "share": 0.799, "median_virality": 1.02, "median_views": 5994, "p_value": 0.0013, "reliable": true}, {"key": "от 1000 зн.", "raw_key": "от 1000 зн.", "n": 36, "share": 0.201, "median_virality": 0.8, "median_views": 4532, "p_value": 0.0013, "reliable": true}], "top_posts": [{"post_id": "76", "date": "17.07.2026 20:10", "views": 21814, "virality": 4.14, "media_type": "видео", "snippet": "Типичные ошибки кандидатов на техническом собеседовании. Пишите в комментариях, сталкивались ли вы с таким.", "url": ""}, {"post_id": "78", "date": "20.07.2026 14:09", "views": 13296, "virality": 2.52, "media_type": "видео", "snippet": "Собрал агента на LLM, который автоматизирует рутину в почте. Промпты для ChatGPT, которые реально экономят время разработчика. Пишите в комментариях, сталкивались ли вы с таким. Локальные языковые модели: запускаем LLM н…", "url": ""}, {"post_id": "100", "date": "06.08.2026 20:58", "views": 14347, "virality": 2.42, "media_type": "видео", "snippet": "Типизация в python: аннотации типов на практике. Пишите в комментариях, сталкивались ли вы с таким.", "url": ""}, {"post_id": "108", "date": "12.08.2026 17:23", "views": 11541, "virality": 2.35, "media_type": "текст", "snippet": "Сравнил три нейросети для генерации кода на реальной задаче. Нейросети уже пишут код быстрее джуна, но им нужен контроль. Как нейросети меняют профессию программиста в этом году. Пишите в комментариях, сталкивались ли вы…", "url": ""}, {"post_id": "127", "date": "02.09.2026 11:22", "views": 12670, "virality": 2.35, "media_type": "фото", "snippet": "Собрал агента на LLM, который автоматизирует рутину в почте. Сравнил три нейросети для генерации кода на реальной задаче. Пишите в комментариях, сталкивались ли вы с таким.", "url": ""}], "flop_posts": [{"post_id": "38", "date": "06.06.2026 11:24", "views": 2063, "virality": 0.33, "media_type": "текст", "snippet": "Карьерный рост разработчика и роль менторства. Как вырасти с junior до middle за год: личный опыт. Сохраняйте, чтобы не потерять.", "url": ""}, {"post_id": "122", "date": "25.08.2026 07:22", "views": 2035, "virality": 0.38, "media_type": "текст", "snippet": "Генераторы и итераторы в python простыми словами. Типизация в python: аннотации типов на практике. Сохраняйте, чтобы не потерять.", "url": ""}, {"post_id": "141", "date": "12.09.2026 14:00", "views": 3185, "virality": 0.41, "media_type": "текст", "snippet": "Повышение зарплаты: как говорить с руководителем. Стоит ли менять работу ради зарплаты плюс тридцать процентов. Как вырасти с junior до middle за год: личный опыт. Сохраняйте, чтобы не потерять.", "url": ""}, {"post_id": "17", "date": "18.05.2026 09:19", "views": 2371, "virality": 0.43, "media_type": "текст", "snippet": "Режим дня, который помогает учиться программированию после работы. Делюсь тем, что сам проверил на практике. Продуктивность без фанатизма: три привычки, которые работают. Режим дня, который помогает учиться программирова…", "url": ""}, {"post_id": "52", "date": "20.06.2026 10:29", "views": 3121, "virality": 0.47, "media_type": "текст", "snippet": "Синдром самозванца у разработчиков и как с ним жить. Отдых тоже часть работы: почему важно отключаться. Пишите в комментариях, сталкивались ли вы с таким. Как не бросить учёбу через месяц: про мотивацию и дисциплину. Отд…", "url": ""}]}, {"channel": {"platform": "demo", "channel": "ii_bez_vody", "title": "ИИ без воды (демо)", "subscribers": 7100, "posts": 256, "role": "competitor", "source_note": "синтетические демо-данные"}, "empty": false, "n_posts": 256, "n_analyzable": 253, "median_views": 3295, "err": 0.4641, "median_er": 0.0394, "rhythm": {"posts_per_week": 10.1, "median_gap_hours": 12.9, "max_gap_days": 3.9, "period_days": 178}, "trend": {"monthly_change": 0.055, "monthly_change_ci": [0.025, 0.087], "significant": true, "weekly": [{"week": "2026-05-03", "median_views": 2915}, {"week": "2026-05-10", "median_views": 2070}, {"week": "2026-05-17", "median_views": 3384}, {"week": "2026-05-24", "median_views": 2249}, {"week": "2026-05-31", "median_views": 2690}, {"week": "2026-06-07", "median_views": 3618}, {"week": "2026-06-14", "median_views": 2773}, {"week": "2026-06-21", "median_views": 2909}, {"week": "2026-06-28", "median_views": 4302}, {"week": "2026-07-05", "median_views": 3881}, {"week": "2026-07-12", "median_views": 3568}, {"week": "2026-07-19", "median_views": 2830}, {"week": "2026-07-26", "median_views": 3605}, {"week": "2026-08-02", "median_views": 3101}, {"week": "2026-08-09", "median_views": 3323}, {"week": "2026-08-16", "median_views": 2969}, {"week": "2026-08-23", "median_views": 2794}, {"week": "2026-08-30", "median_views": 3768}, {"week": "2026-09-06", "median_views": 3825}, {"week": "2026-09-13", "median_views": 3839}, {"week": "2026-09-20", "median_views": 3309}, {"week": "2026-09-27", "median_views": 3410}, {"week": "2026-10-04", "median_views": 3741}, {"week": "2026-10-11", "median_views": 5126}, {"week": "2026-10-18", "median_views": 3907}, {"week": "2026-10-25", "median_views": 3685}]}, "by_weekday": [{"key": "Пн", "raw_key": 0, "n": 30, "share": 0.119, "median_virality": 1.25, "median_views": 4008, "p_value": 0.0098, "reliable": true}, {"key": "Вт", "raw_key": 1, "n": 33, "share": 0.13, "median_virality": 1.22, "median_views": 4119, "p_value": 0.0389, "reliable": true}, {"key": "Ср", "raw_key": 2, "n": 44, "share": 0.174, "median_virality": 0.94, "median_views": 3245, "p_value": 0.8357, "reliable": true}, {"key": "Чт", "raw_key": 3, "n": 37, "share": 0.146, "median_virality": 1.11, "median_views": 3782, "p_value": 0.2191, "reliable": true}, {"key": "Пт", "raw_key": 4, "n": 32, "share": 0.126, "median_virality": 1.26, "median_views": 4032, "p_value": 0.0381, "reliable": true}, {"key": "Сб", "raw_key": 5, "n": 42, "share": 0.166, "median_virality": 0.77, "median_views": 2760, "p_value": 0.0, "reliable": true}, {"key": "Вс", "raw_key": 6, "n": 35, "share": 0.138, "median_virality": 0.84, "median_views": 2727, "p_value": 0.019, "reliable": true}], "by_slot": [{"key": "00–06", "raw_key": "00–06", "n": 1, "share": 0.004, "median_virality": 0.54, "median_views": 1684, "p_value": null, "reliable": false}, {"key": "06–09", "raw_key": "06–09", "n": 39, "share": 0.154, "median_virality": 0.7, "median_views": 2328, "p_value": 0.0, "reliable": true}, {"key": "09–12", "raw_key": "09–12", "n": 42, "share": 0.166, "median_virality": 0.93, "median_views": 3214, "p_value": 0.3491, "reliable": true}, {"key": "12–15", "raw_key": "12–15", "n": 46, "share": 0.182, "median_virality": 1.15, "median_views": 3735, "p_value": 0.2391, "reliable": true}, {"key": "15–18", "raw_key": "15–18", "n": 48, "share": 0.19, "median_virality": 0.93, "median_views": 3122, "p_value": 0.3862, "reliable": true}, {"key": "18–21", "raw_key": "18–21", "n": 54, "share": 0.213, "median_virality": 1.47, "median_views": 4502, "p_value": 0.0, "reliable": true}, {"key": "21–24", "raw_key": "21–24", "n": 23, "share": 0.091, "median_virality": 0.94, "median_views": 3295, "p_value": 0.9084, "reliable": true}], "by_media": [{"key": "фото", "raw_key": "photo", "n": 81, "share": 0.32, "median_virality": 1.0, "median_views": 3464, "p_value": 0.4835, "reliable": true}, {"key": "текст", "raw_key": "text", "n": 134, "share": 0.53, "median_virality": 0.9, "median_views": 3058, "p_value": 0.0001, "reliable": true}, {"key": "видео", "raw_key": "video", "n": 38, "share": 0.15, "median_virality": 1.42, "median_views": 4511, "p_value": 0.0, "reliable": true}], "by_length": [{"key": "до 300 зн.", "raw_key": "до 300 зн.", "n": 198, "share": 0.783, "median_virality": 1.02, "median_views": 3586, "p_value": 0.0364, "reliable": true}, {"key": "300–1000 зн.", "raw_key": "300–1000 зн.", "n": 18, "share": 0.071, "median_virality": 0.82, "median_views": 2641, "p_value": 0.0305, "reliable": true}, {"key": "от 1000 зн.", "raw_key": "от 1000 зн.", "n": 37, "share": 0.146, "median_virality": 0.92, "median_views": 3155, "p_value": 0.3861, "reliable": true}], "top_posts": [{"post_id": "181", "date": "02.09.2026 19:32", "views": 10630, "virality": 3.47, "media_type": "видео", "snippet": "ИИ-агенты: что это такое и где они уже работают. Как нейросети меняют профессию программиста в этом году. Нейросети уже пишут код быстрее джуна, но им нужен контроль. Сохраняйте, чтобы не потерять.", "url": ""}, {"post_id": "168", "date": "25.08.2026 23:14", "views": 7223, "virality": 2.76, "media_type": "фото", "snippet": "Собрал агента на LLM, который автоматизирует рутину в почте. Сохраняйте, чтобы не потерять.", "url": ""}, {"post_id": "148", "date": "14.08.2026 12:24", "views": 6575, "virality": 2.36, "media_type": "фото", "snippet": "Как нейросети меняют профессию программиста в этом году. Локальные языковые модели: запускаем LLM на своём ноутбуке. Нейросети уже пишут код быстрее джуна, но им нужен контроль. Пишите в комментариях, сталкивались ли вы …", "url": ""}, {"post_id": "106", "date": "13.07.2026 15:10", "views": 8220, "virality": 2.29, "media_type": "видео", "snippet": "Сравнил три нейросети для генерации кода на реальной задаче. Автоматизация отчётов с помощью нейросети и пары строк кода. Сохраняйте, чтобы не потерять.", "url": ""}, {"post_id": "62", "date": "18.06.2026 19:37", "views": 6188, "virality": 2.27, "media_type": "видео", "snippet": "Собрал агента на LLM, который автоматизирует рутину в почте. Промпты для ChatGPT, которые реально экономят время разработчика. Делюсь тем, что сам проверил на практике.", "url": ""}], "flop_posts": [{"post_id": "202", "date": "20.09.2026 07:30", "views": 1357, "virality": 0.37, "media_type": "текст", "snippet": "Пишем скрипт на python, который парсит сайт и сохраняет данные. Как устроены декораторы в python и зачем они нужны в коде. Функции в python: разбираем аргументы по умолчанию и подводные камни. Делюсь тем, что сам провери…", "url": ""}, {"post_id": "130", "date": "01.08.2026 06:55", "views": 1581, "virality": 0.37, "media_type": "текст", "snippet": "Промпты для ChatGPT, которые реально экономят время разработчика. Автоматизация отчётов с помощью нейросети и пары строк кода. Сравнил три нейросети для генерации кода на реальной задаче. Сохраняйте, чтобы не потерять. А…", "url": ""}, {"post_id": "8", "date": "10.05.2026 13:35", "views": 1182, "virality": 0.41, "media_type": "текст", "snippet": "Пишем скрипт на python, который парсит сайт и сохраняет данные. Типизация в python: аннотации типов на практике. Пишите в комментариях, сталкивались ли вы с таким. Виртуальное окружение python: почему без него нельзя. Фу…", "url": ""}, {"post_id": "86", "date": "29.06.2026 09:24", "views": 1799, "virality": 0.42, "media_type": "текст", "snippet": "Полезная библиотека python, о которой мало кто знает. Пишем скрипт на python, который парсит сайт и сохраняет данные. Делюсь тем, что сам проверил на практике. Виртуальное окружение python: почему без него нельзя. Как ус…", "url": ""}, {"post_id": "44", "date": "06.06.2026 10:47", "views": 1511, "virality": 0.44, "media_type": "текст", "snippet": "Как нейросети меняют профессию программиста в этом году. Локальные языковые модели: запускаем LLM на своём ноутбуке. Делюсь тем, что сам проверил на практике.", "url": ""}]}], "competitor_media": [{"key": "фото", "raw_key": "photo", "n": 205, "share": 0.312, "median_virality": 0.99, "median_views": 4021, "p_value": 0.4914, "reliable": true}, {"key": "текст", "raw_key": "text", "n": 327, "share": 0.497, "median_virality": 0.91, "median_views": 4047, "p_value": 0.0, "reliable": true}, {"key": "видео", "raw_key": "video", "n": 126, "share": 0.191, "median_virality": 1.45, "median_views": 5598, "p_value": 0.0, "reliable": true}], "benchmark": [{"title": "Код и кофе (демо)", "platform": "demo", "role": "author", "subscribers": 4200, "posts": 152, "posts_per_week": 6.0, "median_views": 1668, "err": 0.3971, "median_er": 0.0375, "monthly_change": 0.064, "top_format": "видео"}, {"title": "Джун на старте (демо)", "platform": "demo", "role": "competitor", "subscribers": 9800, "posts": 231, "posts_per_week": 9.2, "median_views": 4179, "err": 0.4265, "median_er": 0.0409, "monthly_change": 0.06, "top_format": "видео"}, {"title": "Senior в деле (демо)", "platform": "demo", "role": "competitor", "subscribers": 15300, "posts": 180, "posts_per_week": 7.1, "median_views": 5863, "err": 0.3832, "median_er": 0.0382, "monthly_change": 0.021, "top_format": "видео"}, {"title": "ИИ без воды (демо)", "platform": "demo", "role": "competitor", "subscribers": 7100, "posts": 256, "posts_per_week": 10.1, "median_views": 3295, "err": 0.4641, "median_er": 0.0394, "monthly_change": 0.055, "top_format": "видео"}], "topics": {"ok": true, "reason": null, "list": [{"id": 0, "label": "обработку, ускорить, pandas", "keywords": ["обработку", "ускорить", "pandas", "десять", "таблицы", "нужны"]}, {"id": 1, "label": "зарплаты, middle, стоит работу", "keywords": ["зарплаты", "middle", "стоит работу", "ради", "тридцать", "процентов"]}, {"id": 2, "label": "мем, прод, работает никто", "keywords": ["мем", "прод", "работает никто", "знает почему", "недели код", "вечера"]}, {"id": 3, "label": "фрилансе, проекта, заказчик", "keywords": ["фрилансе", "проекта", "заказчик", "защититься", "сдачи", "пропал"]}, {"id": 4, "label": "собеседовании, оффер, получил", "keywords": ["собеседовании", "оффер", "получил", "python-разработчика", "вопросы", "позицию"]}, {"id": 5, "label": "нейросети, llm, реально", "keywords": ["нейросети", "llm", "реально", "код", "запускаем", "локальные"]}, {"id": 6, "label": "работу, почему важно, часть", "keywords": ["работу", "почему важно", "часть", "отключаться", "отдых", "месяц мотивацию"]}, {"id": 7, "label": "сохраняет, сайт, данные", "keywords": ["сохраняет", "сайт", "данные", "пишем", "скрипт python", "парсит"]}, {"id": 8, "label": "python, словами, генераторы", "keywords": ["python", "словами", "генераторы", "простыми", "итераторы", "подводные камни"]}], "n_docs": 676}, "topic_performance": {"ok": true, "table": [{"topic_id": 0, "label": "обработку, ускорить, pandas", "keywords": ["обработку", "ускорить", "pandas", "десять", "таблицы", "нужны"], "author": {"n": 10, "share": 0.075, "median_virality": 1.02}, "competitors": {"n": 31, "share": 0.07, "median_virality": 0.83}, "competitor_examples": [{"channel": "Джун на старте (демо)", "virality": 2.13, "snippet": "Виртуальное окружение python: почему без него нельзя. Полезная библиотека python, о которой мало кто знает. Как устроены декораторы в python и зачем они нужны в"}, {"channel": "Senior в деле (демо)", "virality": 1.74, "snippet": "Pandas: как ускорить обработку таблицы в десять раз. Генераторы и итераторы в python простыми словами. Виртуальное окружение python: почему без него нельзя."}], "author_examples": [{"virality": 1.71, "snippet": "Полезная библиотека python, о которой мало кто знает. Как устроены декораторы в python и зачем они нужны в коде. Типизация в python: аннотации типов на практике"}, {"virality": 1.59, "snippet": "Как устроены декораторы в python и зачем они нужны в коде."}]}, {"topic_id": 1, "label": "зарплаты, middle, стоит работу", "keywords": ["зарплаты", "middle", "стоит работу", "ради", "тридцать", "процентов"], "author": {"n": 20, "share": 0.15, "median_virality": 1.02}, "competitors": {"n": 71, "share": 0.161, "median_virality": 0.98}, "competitor_examples": [{"channel": "Senior в деле (демо)", "virality": 2.24, "snippet": "Грейды в компаниях: чем middle отличается от senior на самом деле. Повышение зарплаты: как говорить с руководителем."}, {"channel": "Senior в деле (демо)", "virality": 2.22, "snippet": "Зарплаты в IT в этом году: что изменилось на рынке. Карьерный рост разработчика и роль менторства. Повышение зарплаты: как говорить с руководителем."}], "author_examples": [{"virality": 2.31, "snippet": "Как вырасти с junior до middle за год: личный опыт. Повышение зарплаты: как говорить с руководителем. Карьерный рост разработчика и роль менторства. Грейды в ко"}, {"virality": 2.05, "snippet": "Зарплаты в IT в этом году: что изменилось на рынке. Как вырасти с junior до middle за год: личный опыт. Стоит ли менять работу ради зарплаты плюс тридцать проце"}]}, {"topic_id": 2, "label": "мем, прод, работает никто", "keywords": ["мем", "прод", "работает никто", "знает почему", "недели код", "вечера"], "author": {"n": 16, "share": 0.12, "median_virality": 1.29}, "competitors": {"n": 66, "share": 0.15, "median_virality": 0.88}, "competitor_examples": [{"channel": "Джун на старте (демо)", "virality": 2.5, "snippet": "Пятничный мем: когда деплой в прод в шесть вечера."}, {"channel": "Джун на старте (демо)", "virality": 2.3, "snippet": "Мем недели: код работает, и никто не знает почему. Баг, который нашёл тестировщик, а исправлять тебе. Когда тимлид говорит, что задача на пять минут."}], "author_examples": [{"virality": 2.21, "snippet": "Пятница, прод упал, а ты уже в такси. Когда тимлид говорит, что задача на пять минут. Пятничный мем: когда деплой в прод в шесть вечера. Пятница, прод упал, а т"}, {"virality": 2.15, "snippet": "Баг, который нашёл тестировщик, а исправлять тебе. Пятничный мем: когда деплой в прод в шесть вечера. Пятница, прод упал, а ты уже в такси."}]}, {"topic_id": 3, "label": "фрилансе, проекта, заказчик", "keywords": ["фрилансе", "проекта", "заказчик", "защититься", "сдачи", "пропал"], "author": {"n": 0, "share": 0.0, "median_virality": null}, "competitors": {"n": 73, "share": 0.166, "median_virality": 1.09}, "competitor_examples": [{"channel": "Джун на старте (демо)", "virality": 3.67, "snippet": "Заказчик пропал после сдачи проекта — как защититься на фрилансе."}, {"channel": "Джун на старте (демо)", "virality": 2.52, "snippet": "Фриланс или офис: честное сравнение денег и свободы. Портфолио для фриланса: что показывать клиентам. Фриланс для разработчика: где искать первых заказчиков."}], "author_examples": []}, {"topic_id": 4, "label": "собеседовании, оффер, получил", "keywords": ["собеседовании", "оффер", "получил", "python-разработчика", "вопросы", "позицию"], "author": {"n": 0, "share": 0.0, "median_virality": null}, "competitors": {"n": 63, "share": 0.143, "median_virality": 1.31}, "competitor_examples": [{"channel": "Джун на старте (демо)", "virality": 2.47, "snippet": "HR спрашивает про ожидания по зарплате на собеседовании — что отвечать. Типичные ошибки кандидатов на техническом собеседовании."}, {"channel": "Джун на старте (демо)", "virality": 2.44, "snippet": "Лайвкодинг на собеседовании пугает всех, но к нему можно подготовиться. Типичные ошибки кандидатов на техническом собеседовании."}], "author_examples": []}, {"topic_id": 5, "label": "нейросети, llm, реально", "keywords": ["нейросети", "llm", "реально", "код", "запускаем", "локальные"], "author": {"n": 12, "share": 0.09, "median_virality": 1.56}, "competitors": {"n": 35, "share": 0.079, "median_virality": 1.29}, "competitor_examples": [{"channel": "Senior в деле (демо)", "virality": 2.52, "snippet": "Собрал агента на LLM, который автоматизирует рутину в почте. Промпты для ChatGPT, которые реально экономят время разработчика. Локальные языковые модели: запуск"}, {"channel": "Senior в деле (демо)", "virality": 2.35, "snippet": "Сравнил три нейросети для генерации кода на реальной задаче. Нейросети уже пишут код быстрее джуна, но им нужен контроль. Как нейросети меняют профессию програм"}], "author_examples": [{"virality": 2.98, "snippet": "Автоматизация отчётов с помощью нейросети и пары строк кода. Промпты для ChatGPT, которые реально экономят время разработчика. Собрал агента на LLM, который авт"}, {"virality": 2.37, "snippet": "Как нейросети меняют профессию программиста в этом году. Нейросети уже пишут код быстрее джуна, но им нужен контроль. Собрал агента на LLM, который автоматизиру"}]}, {"topic_id": 6, "label": "работу, почему важно, часть", "keywords": ["работу", "почему важно", "часть", "отключаться", "отдых", "месяц мотивацию"], "author": {"n": 40, "share": 0.301, "median_virality": 0.77}, "competitors": {"n": 15, "share": 0.034, "median_virality": 0.88}, "competitor_examples": [{"channel": "Senior в деле (демо)", "virality": 1.69, "snippet": "Синдром самозванца у разработчиков и как с ним жить. Отдых тоже часть работы: почему важно отключаться."}, {"channel": "Senior в деле (демо)", "virality": 1.32, "snippet": "Как не бросить учёбу через месяц: про мотивацию и дисциплину. Выгорание у программистов: как я его заметил и что сделал."}], "author_examples": [{"virality": 3.34, "snippet": "Синдром самозванца у разработчиков и как с ним жить. Режим дня, который помогает учиться программированию после работы."}, {"virality": 1.74, "snippet": "Отдых тоже часть работы: почему важно отключаться."}]}, {"topic_id": 7, "label": "сохраняет, сайт, данные", "keywords": ["сохраняет", "сайт", "данные", "пишем", "скрипт python", "парсит"], "author": {"n": 11, "share": 0.083, "median_virality": 0.88}, "competitors": {"n": 30, "share": 0.068, "median_virality": 0.87}, "competitor_examples": [{"channel": "ИИ без воды (демо)", "virality": 1.57, "snippet": "Пишем скрипт на python, который парсит сайт и сохраняет данные."}, {"channel": "Джун на старте (демо)", "virality": 1.39, "snippet": "Pandas: как ускорить обработку таблицы в десять раз. Пишем скрипт на python, который парсит сайт и сохраняет данные. Типизация в python: аннотации типов на прак"}], "author_examples": [{"virality": 1.81, "snippet": "Пишем скрипт на python, который парсит сайт и сохраняет данные."}, {"virality": 1.45, "snippet": "Пишем скрипт на python, который парсит сайт и сохраняет данные. Типизация в python: аннотации типов на практике. Pandas: как ускорить обработку таблицы в десять"}]}, {"topic_id": 8, "label": "python, словами, генераторы", "keywords": ["python", "словами", "генераторы", "простыми", "итераторы", "подводные камни"], "author": {"n": 24, "share": 0.18, "median_virality": 1.11}, "competitors": {"n": 57, "share": 0.129, "median_virality": 0.86}, "competitor_examples": [{"channel": "Senior в деле (демо)", "virality": 2.42, "snippet": "Типизация в python: аннотации типов на практике."}, {"channel": "Senior в деле (демо)", "virality": 2.33, "snippet": "Генераторы и итераторы в python простыми словами."}], "author_examples": [{"virality": 2.13, "snippet": "Функции в python: разбираем аргументы по умолчанию и подводные камни. Типизация в python: аннотации типов на практике. Генераторы и итераторы в python простыми "}, {"virality": 1.74, "snippet": "Генераторы и итераторы в python простыми словами. Функции в python: разбираем аргументы по умолчанию и подводные камни. Типизация в python: аннотации типов на п"}]}], "gaps": [{"topic_id": 4, "label": "собеседовании, оффер, получил", "keywords": ["собеседовании", "оффер", "получил", "python-разработчика", "вопросы", "позицию"], "author": {"n": 0, "share": 0.0, "median_virality": null}, "competitors": {"n": 63, "share": 0.143, "median_virality": 1.31}, "competitor_examples": [{"channel": "Джун на старте (демо)", "virality": 2.47, "snippet": "HR спрашивает про ожидания по зарплате на собеседовании — что отвечать. Типичные ошибки кандидатов на техническом собеседовании."}, {"channel": "Джун на старте (демо)", "virality": 2.44, "snippet": "Лайвкодинг на собеседовании пугает всех, но к нему можно подготовиться. Типичные ошибки кандидатов на техническом собеседовании."}], "author_examples": []}, {"topic_id": 3, "label": "фрилансе, проекта, заказчик", "keywords": ["фрилансе", "проекта", "заказчик", "защититься", "сдачи", "пропал"], "author": {"n": 0, "share": 0.0, "median_virality": null}, "competitors": {"n": 73, "share": 0.166, "median_virality": 1.09}, "competitor_examples": [{"channel": "Джун на старте (демо)", "virality": 3.67, "snippet": "Заказчик пропал после сдачи проекта — как защититься на фрилансе."}, {"channel": "Джун на старте (демо)", "virality": 2.52, "snippet": "Фриланс или офис: честное сравнение денег и свободы. Портфолио для фриланса: что показывать клиентам. Фриланс для разработчика: где искать первых заказчиков."}], "author_examples": []}], "strong": [{"topic_id": 5, "label": "нейросети, llm, реально", "keywords": ["нейросети", "llm", "реально", "код", "запускаем", "локальные"], "author": {"n": 12, "share": 0.09, "median_virality": 1.56}, "competitors": {"n": 35, "share": 0.079, "median_virality": 1.29}, "competitor_examples": [{"channel": "Senior в деле (демо)", "virality": 2.52, "snippet": "Собрал агента на LLM, который автоматизирует рутину в почте. Промпты для ChatGPT, которые реально экономят время разработчика. Локальные языковые модели: запуск"}, {"channel": "Senior в деле (демо)", "virality": 2.35, "snippet": "Сравнил три нейросети для генерации кода на реальной задаче. Нейросети уже пишут код быстрее джуна, но им нужен контроль. Как нейросети меняют профессию програм"}], "author_examples": [{"virality": 2.98, "snippet": "Автоматизация отчётов с помощью нейросети и пары строк кода. Промпты для ChatGPT, которые реально экономят время разработчика. Собрал агента на LLM, который авт"}, {"virality": 2.37, "snippet": "Как нейросети меняют профессию программиста в этом году. Нейросети уже пишут код быстрее джуна, но им нужен контроль. Собрал агента на LLM, который автоматизиру"}]}, {"topic_id": 2, "label": "мем, прод, работает никто", "keywords": ["мем", "прод", "работает никто", "знает почему", "недели код", "вечера"], "author": {"n": 16, "share": 0.12, "median_virality": 1.29}, "competitors": {"n": 66, "share": 0.15, "median_virality": 0.88}, "competitor_examples": [{"channel": "Джун на старте (демо)", "virality": 2.5, "snippet": "Пятничный мем: когда деплой в прод в шесть вечера."}, {"channel": "Джун на старте (демо)", "virality": 2.3, "snippet": "Мем недели: код работает, и никто не знает почему. Баг, который нашёл тестировщик, а исправлять тебе. Когда тимлид говорит, что задача на пять минут."}], "author_examples": [{"virality": 2.21, "snippet": "Пятница, прод упал, а ты уже в такси. Когда тимлид говорит, что задача на пять минут. Пятничный мем: когда деплой в прод в шесть вечера. Пятница, прод упал, а т"}, {"virality": 2.15, "snippet": "Баг, который нашёл тестировщик, а исправлять тебе. Пятничный мем: когда деплой в прод в шесть вечера. Пятница, прод упал, а ты уже в такси."}]}], "weak": [{"topic_id": 6, "label": "работу, почему важно, часть", "keywords": ["работу", "почему важно", "часть", "отключаться", "отдых", "месяц мотивацию"], "author": {"n": 40, "share": 0.301, "median_virality": 0.77}, "competitors": {"n": 15, "share": 0.034, "median_virality": 0.88}, "competitor_examples": [{"channel": "Senior в деле (демо)", "virality": 1.69, "snippet": "Синдром самозванца у разработчиков и как с ним жить. Отдых тоже часть работы: почему важно отключаться."}, {"channel": "Senior в деле (демо)", "virality": 1.32, "snippet": "Как не бросить учёбу через месяц: про мотивацию и дисциплину. Выгорание у программистов: как я его заметил и что сделал."}], "author_examples": [{"virality": 3.34, "snippet": "Синдром самозванца у разработчиков и как с ним жить. Режим дня, который помогает учиться программированию после работы."}, {"virality": 1.74, "snippet": "Отдых тоже часть работы: почему важно отключаться."}]}]}, "facts": [{"id": "F1", "category": "обзор", "text": "Канал «Код и кофе (демо)»: проанализировано 152 постов за 179 дн.; медианный охват поста — 1 668, ERR (охват/подписчики) — 39,7%, ER (реакции/охват) — 3,8%.", "confidence": "высокая", "data": {"median_views": 1668, "err": 0.3971}}, {"id": "F2", "category": "динамика", "text": "Охват постов растёт: оценка тренда +6,4% в месяц; 90% интервал: от 2,1% до 10,8% (робастная регрессия Тейла–Сена).", "confidence": "высокая", "data": {"monthly_change": 0.064}}, {"id": "F3", "category": "ритм", "text": "Автор публикует 6,0 поста в неделю; самый долгий перерыв — 6,1 дн. У конкурентов в медиане 9,2 поста в неделю.", "confidence": "высокая", "data": {"posts_per_week": 6.0, "competitors_ppw": [9.2, 7.1, 10.1]}}, {"id": "F4", "category": "время", "text": "Лучше всего заходят публикации в слоте 18–21 (МСК): медианная виральность 1,40× (n=37); хуже всего — публикации в слоте 06–09 (МСК): 0,75× (n=17).", "confidence": "высокая", "data": {"best": {"key": "18–21", "raw_key": "18–21", "n": 37, "share": 0.247, "median_virality": 1.4, "median_views": 2183, "p_value": 0.0001, "reliable": true}, "worst": {"key": "06–09", "raw_key": "06–09", "n": 17, "share": 0.113, "median_virality": 0.75, "median_views": 1184, "p_value": 0.0221, "reliable": true}}}, {"id": "F5", "category": "день недели", "text": "Лучше всего заходят публикации в Пн: медианная виральность 1,30× (n=21); хуже всего — публикации в Сб: 0,67× (n=18).", "confidence": "средняя", "data": {"best": {"key": "Пн", "raw_key": 0, "n": 21, "share": 0.14, "median_virality": 1.3, "median_views": 2071, "p_value": 0.0595, "reliable": true}, "worst": {"key": "Сб", "raw_key": 5, "n": 18, "share": 0.12, "median_virality": 0.67, "median_views": 923, "p_value": 0.0046, "reliable": true}}}, {"id": "F6", "category": "длина", "text": "Лучше всего заходят посты длиной 300–1000 зн.: медианная виральность 1,20× (n=7); хуже всего — посты длиной от 1000 зн.: 0,96× (n=35).", "confidence": "низкая", "data": {"best": {"key": "300–1000 зн.", "raw_key": "300–1000 зн.", "n": 7, "share": 0.047, "median_virality": 1.2, "median_views": 1481, "p_value": 0.3479, "reliable": true}, "worst": {"key": "от 1000 зн.", "raw_key": "от 1000 зн.", "n": 35, "share": 0.233, "median_virality": 0.96, "median_views": 1396, "p_value": 0.2462, "reliable": true}}}, {"id": "F7", "category": "формат", "text": "Лучше всего заходят посты формата «видео»: медианная виральность 1,69× (n=15); хуже всего — посты формата «текст»: 0,95× (n=89).", "confidence": "высокая", "data": {"best": {"key": "видео", "raw_key": "video", "n": 15, "share": 0.1, "median_virality": 1.69, "median_views": 2801, "p_value": 0.0, "reliable": true}, "worst": {"key": "текст", "raw_key": "text", "n": 89, "share": 0.593, "median_virality": 0.95, "median_views": 1477, "p_value": 0.0292, "reliable": true}}}, {"id": "F8", "category": "формат", "text": "Формат «видео» даёт 1,69× к обычному охвату, но составляет лишь 10,0% постов; основной формат «текст» (59,3% постов) — 0,95×.", "confidence": "высокая", "data": {"best": {"key": "видео", "raw_key": "video", "n": 15, "share": 0.1, "median_virality": 1.69, "median_views": 2801, "p_value": 0.0, "reliable": true}, "most": {"key": "текст", "raw_key": "text", "n": 89, "share": 0.593, "median_virality": 0.95, "median_views": 1477, "p_value": 0.0292, "reliable": true}}}, {"id": "F9", "category": "лучший пост", "text": "Пост от 04.08.2026 20:46 (видео) набрал 3,34× к обычному охвату: «Синдром самозванца у разработчиков и как с ним жить. Режим дня, который помогает учиться программированию после работы. Делюсь тем, что сам проверил на…»", "confidence": "высокая", "data": {"post": {"post_id": "84", "date": "04.08.2026 20:46", "views": 4760, "virality": 3.34, "media_type": "видео", "snippet": "Синдром самозванца у разработчиков и как с ним жить. Режим дня, который помогает учиться программированию после работы. Делюсь тем, что сам проверил на практике.", "url": ""}}}, {"id": "F10", "category": "лучший пост", "text": "Пост от 12.05.2026 19:16 (текст) набрал 2,98× к обычному охвату: «Автоматизация отчётов с помощью нейросети и пары строк кода. Промпты для ChatGPT, которые реально экономят время разработчика. Собрал агента на LLM, который…»", "confidence": "высокая", "data": {"post": {"post_id": "9", "date": "12.05.2026 19:16", "views": 3316, "virality": 2.98, "media_type": "текст", "snippet": "Автоматизация отчётов с помощью нейросети и пары строк кода. Промпты для ChatGPT, которые реально экономят время разработчика. Собрал агента на LLM, который автоматизирует рутину в почте. Делюсь тем, что сам проверил на …", "url": ""}}}, {"id": "F11", "category": "лучший пост", "text": "Пост от 30.07.2026 20:59 (текст) набрал 2,68× к обычному охвату: «Собрал агента на LLM, который автоматизирует рутину в почте. Делюсь тем, что сам проверил на практике.»", "confidence": "высокая", "data": {"post": {"post_id": "78", "date": "30.07.2026 20:59", "views": 4311, "virality": 2.68, "media_type": "текст", "snippet": "Собрал агента на LLM, который автоматизирует рутину в почте. Делюсь тем, что сам проверил на практике.", "url": ""}}}, {"id": "F12", "category": "слабый пост", "text": "Пост от 29.08.2026 11:42 (фото) набрал лишь 0,39× к обычному охвату: «Режим дня, который помогает учиться программированию после работы. Продуктивность без фанатизма: три привычки, которые работают. Пишите в комментариях,…»", "confidence": "высокая", "data": {"post": {"post_id": "103", "date": "29.08.2026 11:42", "views": 781, "virality": 0.39, "media_type": "фото", "snippet": "Режим дня, который помогает учиться программированию после работы. Продуктивность без фанатизма: три привычки, которые работают. Пишите в комментариях, сталкивались ли вы с таким.", "url": ""}}}, {"id": "F13", "category": "слабый пост", "text": "Пост от 23.07.2026 22:17 (фото) набрал лишь 0,40× к обычному охвату: «Синдром самозванца у разработчиков и как с ним жить. Делюсь тем, что сам проверил на практике.»", "confidence": "высокая", "data": {"post": {"post_id": "72", "date": "23.07.2026 22:17", "views": 643, "virality": 0.4, "media_type": "фото", "snippet": "Синдром самозванца у разработчиков и как с ним жить. Делюсь тем, что сам проверил на практике.", "url": ""}}}, {"id": "F14", "category": "сильная тема", "text": "Тема «нейросети, llm, реально» у автора заходит выше среднего: 1,56× (n=12, 9,0% постов). Ключевые слова: нейросети, llm, реально, код, запускаем.", "confidence": "средняя", "data": {"topic": "нейросети, llm, реально"}}, {"id": "F15", "category": "сильная тема", "text": "Тема «мем, прод, работает никто» у автора заходит выше среднего: 1,29× (n=16, 12,0% постов). Ключевые слова: мем, прод, работает никто, знает почему, недели код.", "confidence": "средняя", "data": {"topic": "мем, прод, работает никто"}}, {"id": "F16", "category": "слабая тема", "text": "Тема «работу, почему важно, часть» у автора заходит хуже среднего: 0,77× (n=40, 30,1% постов).", "confidence": "средняя", "data": {"topic": "работу, почему важно, часть"}}, {"id": "F17", "category": "ниша", "text": "Тема «собеседовании, оффер, получил» — 14,3% постов конкурентов с виральностью 1,31×, а у автора всего 0,0% постов. Пример у конкурента: «HR спрашивает про ожидания по зарплате на собеседовании — что отвечать. Типичные ошибки кандидатов на техническом собесе» (2,47×).", "confidence": "средняя", "data": {"topic": "собеседовании, оффер, получил"}}, {"id": "F18", "category": "ниша", "text": "Тема «фрилансе, проекта, заказчик» — 16,6% постов конкурентов с виральностью 1,09×, а у автора всего 0,0% постов. Пример у конкурента: «Заказчик пропал после сдачи проекта — как защититься на фрилансе.» (3,67×).", "confidence": "средняя", "data": {"topic": "фрилансе, проекта, заказчик"}}, {"id": "F19", "category": "конкуренты", "text": "ERR автора 39,7% против медианы конкурентов 42,6%; выше, чем у автора, ERR у 2 из 3 конкурентов.", "confidence": "высокая", "data": {"author_err": 0.3971, "competitors": [["Джун на старте (демо)", 0.4265], ["Senior в деле (демо)", 0.3832], ["ИИ без воды (демо)", 0.4641]]}}, {"id": "F20", "category": "формат у конкурентов", "text": "У конкурентов лучше всего заходит формат «видео»: 1,45× (n=126).", "confidence": "высокая", "data": {"best": {"key": "видео", "raw_key": "video", "n": 126, "share": 0.191, "median_virality": 1.45, "median_views": 5598, "p_value": 0.0, "reliable": true}}}]}, "strategy": {"mode": "offline", "llm_steps_ok": 0, "llm_errors": [], "model": null, "agents": [{"key": "metrics", "name": "Аналитик метрик", "temperature": 0.3, "facts_seen": 10, "recommendations": [{"title": "Больше постов в формате «видео»", "action": "Поднять долю формата «видео» примерно до 30% публикаций.", "rationale": "Формат «видео» даёт 1,69× к обычному охвату, но составляет лишь 10,0% постов; основной формат «текст» (59,3% постов) — 0,95×.", "facts": ["F8"], "expected_effect": "Рост медианного охвата; сравнить через 4 недели.", "priority": "высокий", "rec_id": "R1"}, {"title": "Публиковать в 18–21 (МСК)", "action": "Перенести основные публикации в слот 18–21, избегать слота 06–09.", "rationale": "Лучше всего заходят публикации в слоте 18–21 (МСК): медианная виральность 1,40× (n=37); хуже всего — публикации в слоте 06–09 (МСК): 0,75× (n=17).", "facts": ["F4"], "expected_effect": "Рост охвата первых суток.", "priority": "средний", "rec_id": "R2"}, {"title": "Увеличить частоту публикаций", "action": "Перейти на 8 публикаций в неделю за счёт коротких форматов.", "rationale": "Автор публикует 6,0 поста в неделю; самый долгий перерыв — 6,1 дн. У конкурентов в медиане 9,2 поста в неделю.", "facts": ["F3"], "expected_effect": "Больше касаний с аудиторией без потери охвата.", "priority": "средний", "rec_id": "R3"}], "seconds": 0.0, "error": null, "fallback": false}, {"key": "content", "name": "Контент-стратег", "temperature": 0.7, "facts_seen": 11, "recommendations": [{"title": "Рубрика по теме «нейросети, llm, реально»", "action": "Сделать регулярную рубрику (1–2 раза в неделю) по теме «нейросети, llm, реально».", "rationale": "Тема «нейросети, llm, реально» у автора заходит выше среднего: 1,56× (n=12, 9,0% постов). Ключевые слова: нейросети, llm, реально, код, запускаем.", "facts": ["F14"], "expected_effect": "Рост доли виральных постов.", "priority": "высокий", "rec_id": "R4"}, {"title": "Рубрика по теме «мем, прод, работает никто»", "action": "Сделать регулярную рубрику (1–2 раза в неделю) по теме «мем, прод, работает никто».", "rationale": "Тема «мем, прод, работает никто» у автора заходит выше среднего: 1,29× (n=16, 12,0% постов). Ключевые слова: мем, прод, работает никто, знает почему, недели код.", "facts": ["F15"], "expected_effect": "Рост доли виральных постов.", "priority": "высокий", "rec_id": "R5"}, {"title": "Переупаковать тему «работу, почему важно, часть»", "action": "Сократить частоту и сменить подачу: личная история или разбор кейса вместо общих советов.", "rationale": "Тема «работу, почему важно, часть» у автора заходит хуже среднего: 0,77× (n=40, 30,1% постов).", "facts": ["F16"], "expected_effect": "Виральность темы ≥ 1×.", "priority": "средний", "rec_id": "R6"}, {"title": "Продолжения лучших постов", "action": "Сделать продолжение или «часть 2» для трёх самых успешных постов.", "rationale": "Пост от 04.08.2026 20:46 (видео) набрал 3,34× к обычному охвату: «Синдром самозванца у разработчиков и как с ним жить. Режим дня, который помогает учиться программированию после работы. Делюсь тем, что сам проверил на…»", "facts": ["F9", "F10", "F11"], "expected_effect": "Повторение успешного паттерна.", "priority": "средний", "rec_id": "R7"}], "seconds": 0.0, "error": null, "fallback": false}, {"key": "competitors", "name": "Конкурентный аналитик", "temperature": 1.0, "facts_seen": 6, "recommendations": [{"title": "Занять нишу «собеседовании, оффер, получил»", "action": "Запустить серию постов по теме «собеседовании, оффер, получил» со своим углом, а не копией конкурентов.", "rationale": "Тема «собеседовании, оффер, получил» — 14,3% постов конкурентов с виральностью 1,31×, а у автора всего 0,0% постов. Пример у конкурента: «HR спрашивает про ожидания по зарплате на собеседовании — что отвечать. Типичные ошибки кандидатов на техническом собесе» (2,47×).", "facts": ["F17"], "expected_effect": "Привлечение аудитории, которую уже собрали конкуренты.", "priority": "высокий", "rec_id": "R8"}, {"title": "Занять нишу «фрилансе, проекта, заказчик»", "action": "Запустить серию постов по теме «фрилансе, проекта, заказчик» со своим углом, а не копией конкурентов.", "rationale": "Тема «фрилансе, проекта, заказчик» — 16,6% постов конкурентов с виральностью 1,09×, а у автора всего 0,0% постов. Пример у конкурента: «Заказчик пропал после сдачи проекта — как защититься на фрилансе.» (3,67×).", "facts": ["F18"], "expected_effect": "Привлечение аудитории, которую уже собрали конкуренты.", "priority": "высокий", "rec_id": "R9"}, {"title": "Перенять формат «видео» у конкурентов", "action": "Протестировать формат «видео» в своей подаче.", "rationale": "У конкурентов лучше всего заходит формат «видео»: 1,45× (n=126).", "facts": ["F20"], "expected_effect": "Проверка формата на своей аудитории.", "priority": "средний", "rec_id": "R10"}], "seconds": 0.0, "error": null, "fallback": false}], "accepted": [{"title": "Больше постов в формате «видео»", "action": "Поднять долю формата «видео» примерно до 30% публикаций.", "rationale": "Формат «видео» даёт 1,69× к обычному охвату, но составляет лишь 10,0% постов; основной формат «текст» (59,3% постов) — 0,95×.", "facts": ["F8"], "expected_effect": "Рост медианного охвата; сравнить через 4 недели.", "priority": "высокий", "rec_id": "R1", "agent": "Аналитик метрик"}, {"title": "Публиковать в 18–21 (МСК)", "action": "Перенести основные публикации в слот 18–21, избегать слота 06–09.", "rationale": "Лучше всего заходят публикации в слоте 18–21 (МСК): медианная виральность 1,40× (n=37); хуже всего — публикации в слоте 06–09 (МСК): 0,75× (n=17).", "facts": ["F4"], "expected_effect": "Рост охвата первых суток.", "priority": "средний", "rec_id": "R2", "agent": "Аналитик метрик"}, {"title": "Увеличить частоту публикаций", "action": "Перейти на 8 публикаций в неделю за счёт коротких форматов.", "rationale": "Автор публикует 6,0 поста в неделю; самый долгий перерыв — 6,1 дн. У конкурентов в медиане 9,2 поста в неделю.", "facts": ["F3"], "expected_effect": "Больше касаний с аудиторией без потери охвата.", "priority": "средний", "rec_id": "R3", "agent": "Аналитик метрик"}, {"title": "Рубрика по теме «нейросети, llm, реально»", "action": "Сделать регулярную рубрику (1–2 раза в неделю) по теме «нейросети, llm, реально».", "rationale": "Тема «нейросети, llm, реально» у автора заходит выше среднего: 1,56× (n=12, 9,0% постов). Ключевые слова: нейросети, llm, реально, код, запускаем.", "facts": ["F14"], "expected_effect": "Рост доли виральных постов.", "priority": "высокий", "rec_id": "R4", "agent": "Контент-стратег"}, {"title": "Рубрика по теме «мем, прод, работает никто»", "action": "Сделать регулярную рубрику (1–2 раза в неделю) по теме «мем, прод, работает никто».", "rationale": "Тема «мем, прод, работает никто» у автора заходит выше среднего: 1,29× (n=16, 12,0% постов). Ключевые слова: мем, прод, работает никто, знает почему, недели код.", "facts": ["F15"], "expected_effect": "Рост доли виральных постов.", "priority": "высокий", "rec_id": "R5", "agent": "Контент-стратег"}, {"title": "Переупаковать тему «работу, почему важно, часть»", "action": "Сократить частоту и сменить подачу: личная история или разбор кейса вместо общих советов.", "rationale": "Тема «работу, почему важно, часть» у автора заходит хуже среднего: 0,77× (n=40, 30,1% постов).", "facts": ["F16"], "expected_effect": "Виральность темы ≥ 1×.", "priority": "средний", "rec_id": "R6", "agent": "Контент-стратег"}, {"title": "Продолжения лучших постов", "action": "Сделать продолжение или «часть 2» для трёх самых успешных постов.", "rationale": "Пост от 04.08.2026 20:46 (видео) набрал 3,34× к обычному охвату: «Синдром самозванца у разработчиков и как с ним жить. Режим дня, который помогает учиться программированию после работы. Делюсь тем, что сам проверил на…»", "facts": ["F9", "F10", "F11"], "expected_effect": "Повторение успешного паттерна.", "priority": "средний", "rec_id": "R7", "agent": "Контент-стратег"}, {"title": "Занять нишу «собеседовании, оффер, получил»", "action": "Запустить серию постов по теме «собеседовании, оффер, получил» со своим углом, а не копией конкурентов.", "rationale": "Тема «собеседовании, оффер, получил» — 14,3% постов конкурентов с виральностью 1,31×, а у автора всего 0,0% постов. Пример у конкурента: «HR спрашивает про ожидания по зарплате на собеседовании — что отвечать. Типичные ошибки кандидатов на техническом собесе» (2,47×).", "facts": ["F17"], "expected_effect": "Привлечение аудитории, которую уже собрали конкуренты.", "priority": "высокий", "rec_id": "R8", "agent": "Конкурентный аналитик"}, {"title": "Занять нишу «фрилансе, проекта, заказчик»", "action": "Запустить серию постов по теме «фрилансе, проекта, заказчик» со своим углом, а не копией конкурентов.", "rationale": "Тема «фрилансе, проекта, заказчик» — 16,6% постов конкурентов с виральностью 1,09×, а у автора всего 0,0% постов. Пример у конкурента: «Заказчик пропал после сдачи проекта — как защититься на фрилансе.» (3,67×).", "facts": ["F18"], "expected_effect": "Привлечение аудитории, которую уже собрали конкуренты.", "priority": "высокий", "rec_id": "R9", "agent": "Конкурентный аналитик"}, {"title": "Перенять формат «видео» у конкурентов", "action": "Протестировать формат «видео» в своей подаче.", "rationale": "У конкурентов лучше всего заходит формат «видео»: 1,45× (n=126).", "facts": ["F20"], "expected_effect": "Проверка формата на своей аудитории.", "priority": "средний", "rec_id": "R10", "agent": "Конкурентный аналитик"}], "rejected": [], "directions": [{"title": "Больше постов в формате «видео»", "why": "Формат «видео» даёт 1,69× к обычному охвату, но составляет лишь 10,0% постов; основной формат «текст» (59,3% постов) — 0,95×.", "facts": ["F8"], "actions": ["Поднять долю формата «видео» примерно до 30% публикаций."], "kpi": "Рост медианного охвата; сравнить через 4 недели."}, {"title": "Рубрика по теме «нейросети, llm, реально»", "why": "Тема «нейросети, llm, реально» у автора заходит выше среднего: 1,56× (n=12, 9,0% постов). Ключевые слова: нейросети, llm, реально, код, запускаем.", "facts": ["F14"], "actions": ["Сделать регулярную рубрику (1–2 раза в неделю) по теме «нейросети, llm, реально»."], "kpi": "Рост доли виральных постов."}, {"title": "Занять нишу «собеседовании, оффер, получил»", "why": "Тема «собеседовании, оффер, получил» — 14,3% постов конкурентов с виральностью 1,31×, а у автора всего 0,0% постов. Пример у конкурента: «HR спрашивает про ожидания по зарплате на собеседовании — что отвечать. Типичные ошибки кандидатов на техническом собесе» (2,47×).", "facts": ["F17"], "actions": ["Запустить серию постов по теме «собеседовании, оффер, получил» со своим углом, а не копией конкурентов."], "kpi": "Привлечение аудитории, которую уже собрали конкуренты."}], "content_plan": [{"day": 1, "topic": "нейросети, llm, реально", "format": "видео", "time": "19:00", "hook": "Личный опыт или разбор кейса по теме «нейросети, llm, реально»"}, {"day": 3, "topic": "мем, прод, работает никто", "format": "текст", "time": "19:00", "hook": "Личный опыт или разбор кейса по теме «мем, прод, работает никто»"}, {"day": 5, "topic": "собеседовании, оффер, получил", "format": "видео", "time": "19:00", "hook": "Личный опыт или разбор кейса по теме «собеседовании, оффер, получил»"}, {"day": 7, "topic": "фрилансе, проекта, заказчик", "format": "текст", "time": "19:00", "hook": "Личный опыт или разбор кейса по теме «фрилансе, проекта, заказчик»"}, {"day": 9, "topic": "нейросети, llm, реально", "format": "видео", "time": "19:00", "hook": "Личный опыт или разбор кейса по теме «нейросети, llm, реально»"}, {"day": 11, "topic": "мем, прод, работает никто", "format": "текст", "time": "19:00", "hook": "Личный опыт или разбор кейса по теме «мем, прод, работает никто»"}, {"day": 13, "topic": "собеседовании, оффер, получил", "format": "видео", "time": "19:00", "hook": "Личный опыт или разбор кейса по теме «собеседовании, оффер, получил»"}], "experiments": [{"hypothesis": "Лучше всего заходят посты длиной 300–1000 зн.: медианная виральность 1,20× (n=7); хуже всего — посты длиной от 1000 зн.: 0,96× (n=35).", "how": "Две недели чередовать варианты A/B, остальное не менять.", "metric": "медианная виральность", "duration": "2 недели"}], "summary": "Для канала «Код и кофе (демо)» ключевые точки роста: больше постов в формате «видео»; рубрика по теме «нейросети, llm, реально»; занять нишу «собеседовании, оффер, получил».", "avoid": ["Тема «работу, почему важно, часть» у автора заходит хуже среднего: 0,77× (n=40, 30,1% постов).… (F16)"], "trace": [{"step": "Аналитик метрик", "seconds": 0.0, "items": 3, "note": ""}, {"step": "Контент-стратег", "seconds": 0.0, "items": 4, "note": ""}, {"step": "Конкурентный аналитик", "seconds": 0.0, "items": 3, "note": ""}, {"step": "Проверка ссылок на факты", "seconds": 0, "items": 10, "note": "отброшено 0"}, {"step": "Агент-критик", "seconds": 0.0, "items": 3, "note": ""}], "critic_error": null}, "demo": true, "warnings": []}, "report": "# «Вектор»: стратегия для канала «Код и кофе (демо)»\n\n_Сформировано 27.10.2026 19:21 · режим агентов: офлайн (правила, без LLM) · источник данных: синтетические демо-данные_\n\n## Резюме\n\nДля канала «Код и кофе (демо)» ключевые точки роста: больше постов в формате «видео»; рубрика по теме «нейросети, llm, реально»; занять нишу «собеседовании, оффер, получил».\n\n## 3 направления развития\n\n### 1. Больше постов в формате «видео»\n\nФормат «видео» даёт 1,69× к обычному охвату, но составляет лишь 10,0% постов; основной формат «текст» (59,3% постов) — 0,95×.\n\n- Поднять долю формата «видео» примерно до 30% публикаций.\n- **Как измерить:** Рост медианного охвата; сравнить через 4 недели.\n- **Основано на фактах:** F8\n\n### 2. Рубрика по теме «нейросети, llm, реально»\n\nТема «нейросети, llm, реально» у автора заходит выше среднего: 1,56× (n=12, 9,0% постов). Ключевые слова: нейросети, llm, реально, код, запускаем.\n\n- Сделать регулярную рубрику (1–2 раза в неделю) по теме «нейросети, llm, реально».\n- **Как измерить:** Рост доли виральных постов.\n- **Основано на фактах:** F14\n\n### 3. Занять нишу «собеседовании, оффер, получил»\n\nТема «собеседовании, оффер, получил» — 14,3% постов конкурентов с виральностью 1,31×, а у автора всего 0,0% постов. Пример у конкурента: «HR спрашивает про ожидания по зарплате на собеседовании — что отвечать. Типичные ошибки кандидатов на техническом собесе» (2,47×).\n\n- Запустить серию постов по теме «собеседовании, оффер, получил» со своим углом, а не копией конкурентов.\n- **Как измерить:** Привлечение аудитории, которую уже собрали конкуренты.\n- **Основано на фактах:** F17\n\n## Контент-план на 14 дней\n\n| День | Тема | Формат | Время | Идея |\n|---|---|---|---|---|\n| 1 | нейросети, llm, реально | видео | 19:00 | Личный опыт или разбор кейса по теме «нейросети, llm, реально» |\n| 3 | мем, прод, работает никто | текст | 19:00 | Личный опыт или разбор кейса по теме «мем, прод, работает никто» |\n| 5 | собеседовании, оффер, получил | видео | 19:00 | Личный опыт или разбор кейса по теме «собеседовании, оффер, получил» |\n| 7 | фрилансе, проекта, заказчик | текст | 19:00 | Личный опыт или разбор кейса по теме «фрилансе, проекта, заказчик» |\n| 9 | нейросети, llm, реально | видео | 19:00 | Личный опыт или разбор кейса по теме «нейросети, llm, реально» |\n| 11 | мем, прод, работает никто | текст | 19:00 | Личный опыт или разбор кейса по теме «мем, прод, работает никто» |\n| 13 | собеседовании, оффер, получил | видео | 19:00 | Личный опыт или разбор кейса по теме «собеседовании, оффер, получил» |\n\n## Эксперименты\n\n- **Гипотеза:** Лучше всего заходят посты длиной 300–1000 зн.: медианная виральность 1,20× (n=7); хуже всего — посты длиной от 1000 зн.: 0,96× (n=35).  \n  **Как проверить:** Две недели чередовать варианты A/B, остальное не менять. · **Метрика:** медианная виральность · **Срок:** 2 недели\n\n## Чего избегать\n\n- Тема «работу, почему важно, часть» у автора заходит хуже среднего: 0,77× (n=40, 30,1% постов).… (F16)\n\n## Сравнение с конкурентами\n\n| Канал | Подписчики | Постов/нед | Медианный охват | ERR | ER | Тренд/мес | Лучший формат |\n|---|---|---|---|---|---|---|---|\n| **Код и кофе (демо)** | 4 200 | 6,0 | 1 668 | 39,7% | 3,8% | 6,4% | видео |\n| Джун на старте (демо) | 9 800 | 9,2 | 4 179 | 42,6% | 4,1% | 6,0% | видео |\n| Senior в деле (демо) | 15 300 | 7,1 | 5 863 | 38,3% | 3,8% | 2,1% | видео |\n| ИИ без воды (демо) | 7 100 | 10,1 | 3 295 | 46,4% | 3,9% | 5,5% | видео |\n\n## Фактическая база\n\nКаждый вывод выше ссылается на эти факты.\n\n- **F1** (обзор, уверенность: высокая): Канал «Код и кофе (демо)»: проанализировано 152 постов за 179 дн.; медианный охват поста — 1 668, ERR (охват/подписчики) — 39,7%, ER (реакции/охват) — 3,8%.\n- **F2** (динамика, уверенность: высокая): Охват постов растёт: оценка тренда +6,4% в месяц; 90% интервал: от 2,1% до 10,8% (робастная регрессия Тейла–Сена).\n- **F3** (ритм, уверенность: высокая): Автор публикует 6,0 поста в неделю; самый долгий перерыв — 6,1 дн. У конкурентов в медиане 9,2 поста в неделю.\n- **F4** (время, уверенность: высокая): Лучше всего заходят публикации в слоте 18–21 (МСК): медианная виральность 1,40× (n=37); хуже всего — публикации в слоте 06–09 (МСК): 0,75× (n=17).\n- **F5** (день недели, уверенность: средняя): Лучше всего заходят публикации в Пн: медианная виральность 1,30× (n=21); хуже всего — публикации в Сб: 0,67× (n=18).\n- **F6** (длина, уверенность: низкая): Лучше всего заходят посты длиной 300–1000 зн.: медианная виральность 1,20× (n=7); хуже всего — посты длиной от 1000 зн.: 0,96× (n=35).\n- **F7** (формат, уверенность: высокая): Лучше всего заходят посты формата «видео»: медианная виральность 1,69× (n=15); хуже всего — посты формата «текст»: 0,95× (n=89).\n- **F8** (формат, уверенность: высокая): Формат «видео» даёт 1,69× к обычному охвату, но составляет лишь 10,0% постов; основной формат «текст» (59,3% постов) — 0,95×.\n- **F9** (лучший пост, уверенность: высокая): Пост от 04.08.2026 20:46 (видео) набрал 3,34× к обычному охвату: «Синдром самозванца у разработчиков и как с ним жить. Режим дня, который помогает учиться программированию после работы. Делюсь тем, что сам проверил на…»\n- **F10** (лучший пост, уверенность: высокая): Пост от 12.05.2026 19:16 (текст) набрал 2,98× к обычному охвату: «Автоматизация отчётов с помощью нейросети и пары строк кода. Промпты для ChatGPT, которые реально экономят время разработчика. Собрал агента на LLM, который…»\n- **F11** (лучший пост, уверенность: высокая): Пост от 30.07.2026 20:59 (текст) набрал 2,68× к обычному охвату: «Собрал агента на LLM, который автоматизирует рутину в почте. Делюсь тем, что сам проверил на практике.»\n- **F12** (слабый пост, уверенность: высокая): Пост от 29.08.2026 11:42 (фото) набрал лишь 0,39× к обычному охвату: «Режим дня, который помогает учиться программированию после работы. Продуктивность без фанатизма: три привычки, которые работают. Пишите в комментариях,…»\n- **F13** (слабый пост, уверенность: высокая): Пост от 23.07.2026 22:17 (фото) набрал лишь 0,40× к обычному охвату: «Синдром самозванца у разработчиков и как с ним жить. Делюсь тем, что сам проверил на практике.»\n- **F14** (сильная тема, уверенность: средняя): Тема «нейросети, llm, реально» у автора заходит выше среднего: 1,56× (n=12, 9,0% постов). Ключевые слова: нейросети, llm, реально, код, запускаем.\n- **F15** (сильная тема, уверенность: средняя): Тема «мем, прод, работает никто» у автора заходит выше среднего: 1,29× (n=16, 12,0% постов). Ключевые слова: мем, прод, работает никто, знает почему, недели код.\n- **F16** (слабая тема, уверенность: средняя): Тема «работу, почему важно, часть» у автора заходит хуже среднего: 0,77× (n=40, 30,1% постов).\n- **F17** (ниша, уверенность: средняя): Тема «собеседовании, оффер, получил» — 14,3% постов конкурентов с виральностью 1,31×, а у автора всего 0,0% постов. Пример у конкурента: «HR спрашивает про ожидания по зарплате на собеседовании — что отвечать. Типичные ошибки кандидатов на техническом собесе» (2,47×).\n- **F18** (ниша, уверенность: средняя): Тема «фрилансе, проекта, заказчик» — 16,6% постов конкурентов с виральностью 1,09×, а у автора всего 0,0% постов. Пример у конкурента: «Заказчик пропал после сдачи проекта — как защититься на фрилансе.» (3,67×).\n- **F19** (конкуренты, уверенность: высокая): ERR автора 39,7% против медианы конкурентов 42,6%; выше, чем у автора, ERR у 2 из 3 конкурентов.\n- **F20** (формат у конкурентов, уверенность: высокая): У конкурентов лучше всего заходит формат «видео»: 1,45× (n=126).\n\n---\nМетодика: индекс виральности = охват поста / медиана охвата 15 предыдущих постов канала; посты моложе 72 часов исключены; значимость различий — тест Манна–Уитни; темы — TF-IDF + NMF по стеммированному тексту."};</script>
+<script>
+"use strict";
+
+/* ---------- утилиты ---------- */
+const $ = (sel, root = document) => root.querySelector(sel);
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtInt = (v) => (v == null ? "—" : Math.round(v).toLocaleString("ru-RU"));
+const fmtPct = (v, d = 1) => (v == null ? "—" : (v * 100).toFixed(d).replace(".", ",") + "%");
+const fmtX = (v) => (v == null ? "—" : v.toFixed(2).replace(".", ",") + "×");
+const signPct = (v) => (v == null ? "—" : (v > 0 ? "+" : "") + fmtPct(v));
+
+let CONFIG = { llm: { enabled: false }, vk_token_configured: false };
+let FACTS = {};
+let currentJob = null;
+
+/* ---------- форма ---------- */
+const PLACEHOLDERS = { telegram: "@channel или t.me/channel", vk: "vk.com/club123 или короткое имя" };
+
+function makeSource(container, removable) {
+  const node = $("#source-tpl").content.firstElementChild.cloneNode(true);
+  const platform = $(".platform", node), ident = $(".ident", node), csv = $(".csv-wrap", node);
+  const sync = () => {
+    const p = platform.value;
+    ident.hidden = p === "csv";
+    csv.hidden = p !== "csv";
+    if (p !== "csv") ident.placeholder = PLACEHOLDERS[p];
+    updateVkToken();
+  };
+  platform.addEventListener("change", sync);
+  $(".csv-file", node).addEventListener("change", (e) => uploadCsv(node, e.target.files[0]));
+  if (removable) {
+    const rm = $(".remove", node);
+    rm.hidden = false;
+    rm.addEventListener("click", () => { node.remove(); updateVkToken(); toggleAdd(); });
+  }
+  container.appendChild(node);
+  sync();
+  return node;
+}
+
+async function uploadCsv(row, file) {
+  if (!file) return;
+  const status = $(".csv-status", row);
+  status.textContent = "Загружаю…";
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("name", $(".csv-name", row).value || file.name.replace(/\.csv$/i, ""));
+  if ($(".csv-subs", row).value) fd.append("subscribers", $(".csv-subs", row).value);
+  try {
+    const r = await fetch("/api/upload", { method: "POST", body: fd });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "не удалось загрузить файл");
+    row.dataset.uploadId = data.upload_id;
+    status.textContent = `${data.posts} постов загружено`;
+  } catch (e) {
+    delete row.dataset.uploadId;
+    status.textContent = e.message;
+  }
+}
+
+function readSource(row) {
+  const platform = $(".platform", row).value;
+  if (platform === "csv") return { platform, upload_id: row.dataset.uploadId || "" };
+  return { platform, id: $(".ident", row).value.trim() };
+}
+
+function updateVkToken() {
+  const anyVk = [...document.querySelectorAll(".platform")].some((s) => s.value === "vk");
+  $("#vk-token-wrap").hidden = !(anyVk && !CONFIG.vk_token_configured);
+}
+
+function toggleAdd() {
+  $("#add-comp").hidden = document.querySelectorAll("#competitors .src-row").length >= 5;
+}
+
+function showFormError(msg) {
+  const el = $("#form-error");
+  el.textContent = msg || "";
+  el.hidden = !msg;
+}
+
+/* ---------- задачи ---------- */
+async function startJob(payload) {
+  showFormError("");
+  $("#run").disabled = true;
+  $("#demo").disabled = true;
+  $("#result").hidden = true;
+  $("#steps").innerHTML = "";
+  $("#progress").hidden = false;
+  try {
+    const r = await fetch("/api/jobs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Не удалось запустить анализ");
+    currentJob = data.job_id;
+    poll(data.job_id);
+  } catch (e) {
+    finish();
+    $("#progress").hidden = true;
+    showFormError(e.message);
+  }
+}
+
+async function poll(id) {
+  const r = await fetch(`/api/jobs/${id}`);
+  const job = await r.json();
+  $("#steps").innerHTML = job.steps.map((s) => `<li><span class="t">${s.t.toFixed(1)} с</span>${esc(s.msg)}</li>`).join("");
+  if (job.status === "done") {
+    finish();
+    $("#progress").hidden = true;
+    render(job.result, id);
+  } else if (job.status === "error") {
+    finish();
+    $("#progress").hidden = true;
+    showFormError(job.error);
+  } else {
+    setTimeout(() => poll(id), 700);
+  }
+}
+
+function finish() {
+  $("#run").disabled = false;
+  $("#demo").disabled = false;
+}
+
+/* ---------- графика ---------- */
+function wrap(text, max) {
+  const words = String(text).split(/\s+/);
+  const lines = [];
+  let cur = "";
+  for (const w of words) {
+    if ((cur + " " + w).trim().length > max && cur) { lines.push(cur); cur = w; } else cur = (cur + " " + w).trim();
+  }
+  if (cur) lines.push(cur);
+  return lines.slice(0, 3);
+}
+
+function compassSvg(directions, author, compact) {
+  const W = 560, H = 400, ox = 96, oy = 318, L = 236;
+  const angles = [64, 36, 8];
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Три направления развития канала" class="draw">`;
+  for (const r of [90, 180, 270]) s += `<circle class="ring" cx="${ox}" cy="${oy}" r="${r}"/>`;
+  s += `<line x1="${ox}" y1="${oy}" x2="${W - 10}" y2="${oy}" stroke="#C9D3CC"/><line x1="${ox}" y1="${oy}" x2="${ox}" y2="10" stroke="#C9D3CC"/>`;
+  directions.slice(0, 3).forEach((d, i) => {
+    const a = (angles[i] * Math.PI) / 180;
+    const ex = ox + L * Math.cos(a), ey = oy - L * Math.sin(a);
+    const hx = ox + (L - 14) * Math.cos(a), hy = oy - (L - 14) * Math.sin(a);
+    const delay = 0.15 + i * 0.25;
+    s += `<path class="arrow-path" style="--len:${L};animation-delay:${delay}s" d="M${ox},${oy} L${hx.toFixed(1)},${hy.toFixed(1)}"/>`;
+    const deg = -angles[i];
+    s += `<polygon class="arrow-head" style="animation-delay:${delay + 0.9}s" points="0,-7 16,0 0,7" transform="translate(${hx.toFixed(1)},${hy.toFixed(1)}) rotate(${deg})"/>`;
+    const lx = ex + 16, ly = ey - (i === 0 ? 4 : 0);
+    if (compact) {
+      s += `<g class="dir-tag" style="animation-delay:${delay + 0.9}s"><circle cx="${lx + 20}" cy="${ly - 6}" r="24" fill="#A3195B"/><text class="dir-num" style="font-size:26px" x="${lx + 20}" y="${ly + 3}" text-anchor="middle">${i + 1}</text></g>`;
+    } else {
+      s += `<g class="dir-tag" style="animation-delay:${delay + 0.9}s"><circle cx="${lx + 11}" cy="${ly - 4}" r="11" fill="#A3195B"/><text class="dir-num" x="${lx + 11}" y="${ly + 1}" text-anchor="middle">${i + 1}</text>`;
+      wrap(d.title, 24).forEach((line, j) => {
+        s += `<text class="dir-label" x="${lx + 28}" y="${ly + j * 17}">${esc(line)}</text>`;
+      });
+      s += `</g>`;
+    }
+  });
+  s += `<circle cx="${ox}" cy="${oy}" r="9" fill="#16233A"/><circle cx="${ox}" cy="${oy}" r="16" fill="none" stroke="#16233A" stroke-width="1.5"/>`;
+  const fs = compact ? ' style="font-size:24px"' : "";
+  s += `<text class="axis"${fs} x="${ox + (compact ? 30 : -8)}" y="${oy + (compact ? 50 : 36)}" text-anchor="middle">канал сейчас</text>`;
+  if (!compact) s += `<text class="axis" x="${ox - 8}" y="${oy + 52}" text-anchor="middle">${esc(fmtInt(author.median_views))} просмотров на пост</text>`;
+  return s + "</svg>";
+}
+
+function lineChart(points) {
+  if (!points || points.length < 2) return `<p class="cap">Недостаточно данных для графика.</p>`;
+  const W = 600, H = 210, pl = 52, pr = 12, pt = 12, pb = 28;
+  const vals = points.map((p) => p.median_views);
+  const max = Math.max(...vals) * 1.1, min = 0;
+  const x = (i) => pl + (i / (points.length - 1)) * (W - pl - pr);
+  const y = (v) => pt + (1 - (v - min) / (max - min)) * (H - pt - pb);
+  const d = points.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.median_views).toFixed(1)}`).join(" ");
+  const area = `${d} L${x(points.length - 1).toFixed(1)},${y(0)} L${x(0)},${y(0)} Z`;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Медианный охват по неделям">`;
+  for (const t of [0, 0.5, 1]) {
+    const v = max * t;
+    s += `<line x1="${pl}" x2="${W - pr}" y1="${y(v)}" y2="${y(v)}" stroke="#D8E0DA"/><text class="axis" x="${pl - 8}" y="${y(v) + 4}" text-anchor="end">${fmtInt(v)}</text>`;
+  }
+  s += `<path class="area" d="${area}"/><path class="line" d="${d}"/>`;
+  const fmtD = (s) => new Date(s).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+  s += `<text class="axis" x="${x(0)}" y="${H - 6}">${fmtD(points[0].week)}</text>`;
+  s += `<text class="axis" x="${x(points.length - 1)}" y="${H - 6}" text-anchor="end">${fmtD(points[points.length - 1].week)}</text>`;
+  const last = points.length - 1;
+  s += `<circle class="dot" cx="${x(last)}" cy="${y(points[last].median_views)}" r="4"/>`;
+  return s + "</svg>";
+}
+
+function divergingBars(buckets) {
+  const rows = (buckets || []).filter((b) => b.n > 0);
+  if (!rows.length) return `<p class="cap">Недостаточно данных.</p>`;
+  const dev = Math.max(0.5, ...rows.map((b) => Math.abs(b.median_virality - 1)));
+  let s = "";
+  for (const b of rows) {
+    const v = b.median_virality, w = Math.min(50, (Math.abs(v - 1) / dev) * 50);
+    const left = v >= 1 ? 50 : 50 - w;
+    s += `<div class="div-row${b.reliable ? "" : " thin"}"${b.reliable ? "" : ' title="Мало постов — вывод ненадёжен"'}>
+      <span class="lbl">${esc(b.key)}</span>
+      <span class="div-track"><span class="div-bar ${v >= 1 ? "up" : "down"}" style="left:${left}%;width:${Math.max(w, 0.6)}%"></span></span>
+      <span class="val">${fmtX(v)} <small>n=${b.n}</small></span></div>`;
+  }
+  s += `<div class="div-scale"><span></span><span><span>${fmtX(1 - dev)}</span><span>1×</span><span>${fmtX(1 + dev)}</span></span><span></span></div>`;
+  return s;
+}
+
+/* ---------- факты ---------- */
+const chips = (ids) => (ids || []).map((id) => `<button type="button" class="fact" data-f="${esc(id)}" aria-expanded="false">${esc(id)}</button>`).join("");
+
+function showTip(btn) {
+  const tip = $("#tip");
+  const f = FACTS[btn.dataset.f];
+  if (!f) return;
+  document.querySelectorAll(".fact[aria-expanded=true]").forEach((b) => b.setAttribute("aria-expanded", "false"));
+  btn.setAttribute("aria-expanded", "true");
+  tip.innerHTML = `${esc(f.text)}<span class="c">${esc(f.id)} · ${esc(f.category)} · уверенность: ${esc(f.confidence)}</span>`;
+  tip.hidden = false;
+  const r = btn.getBoundingClientRect();
+  const left = Math.min(window.scrollX + r.left, window.scrollX + document.documentElement.clientWidth - tip.offsetWidth - 12);
+  tip.style.left = `${Math.max(8, left)}px`;
+  tip.style.top = `${window.scrollY + r.bottom + 8}px`;
+}
+
+function hideTip() {
+  $("#tip").hidden = true;
+  document.querySelectorAll(".fact[aria-expanded=true]").forEach((b) => b.setAttribute("aria-expanded", "false"));
+}
+
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".fact");
+  if (btn) { btn.getAttribute("aria-expanded") === "true" ? hideTip() : showTip(btn); return; }
+  if (!e.target.closest("#tip")) hideTip();
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideTip(); });
+
+/* ---------- отрисовка результата ---------- */
+function render(res, jobId, reportHref, noScroll) {
+  const an = res.analysis, st = res.strategy, a = an.author;
+  FACTS = Object.fromEntries(an.facts.map((f) => [f.id, f]));
+  const ch = a.channel;
+  const accepted = new Set(st.accepted.map((r) => r.rec_id));
+  const rejectedMap = Object.fromEntries(st.rejected.filter((r) => r.rec_id).map((r) => [r.rec_id, r]));
+  const totalRecs = st.agents.reduce((n, ag) => n + ag.recommendations.length, 0);
+  const pre = st.rejected.filter((r) => r.rejected_by === "проверка ссылок").length;
+  const byCritic = st.rejected.filter((r) => r.rejected_by === "агент-критик").length;
+  const modeTxt = st.mode === "llm" ? `агенты на модели ${st.model}`
+    : st.mode === "mixed" ? `смешанный режим: модель ${st.model} отработала на ${st.llm_steps_ok} из 4 шагов`
+    : st.model ? `модель ${st.model} не ответила — агенты на правилах` : "офлайн-режим: агенты на правилах, без LLM";
+
+  let h = "";
+  if (res.demo) h += `<div class="banner">Это синтетические демо-данные: каналы вымышлены, а закономерности заложены специально, чтобы показать, как Вектор их находит.</div>`;
+  for (const w of res.warnings || []) h += `<div class="banner">${esc(w)}</div>`;
+  for (const e of st.llm_errors || []) h += `<div class="banner">${esc(e.step)}: модель не сработала, использованы правила. Причина: ${esc(e.error)}</div>`;
+
+  h += `<div class="result-head"><div><h2>Стратегия для «${esc(ch.title)}»</h2>
+        <p class="sub">${esc(a.n_posts)} постов за ${esc(a.rhythm.period_days)} дн. · ${an.competitors.length} конкурента · ${esc(modeTxt)}</p></div>
+        <a class="ghost" href="${reportHref || `/api/jobs/${jobId}/report.md`}" download="vektor-report.md">Скачать отчёт</a></div>`;
+
+  // главный экран: роза направлений
+  h += `<section class="panel compass"><div class="compass-fig">${compassSvg(st.directions, a, window.innerWidth < 640)}</div>
+    <div class="compass-text"><p class="summary">${esc(st.summary)}</p>
+      <dl class="kpis">
+        <div><dt>Медианный охват поста</dt><dd>${fmtInt(a.median_views)}</dd></div>
+        <div><dt>ERR — охват к подписчикам</dt><dd>${fmtPct(a.err)}</dd></div>
+        <div><dt>Динамика охвата в месяц</dt><dd>${signPct(a.trend.monthly_change)}${a.trend.significant === false ? "<small>незначимо</small>" : ""}</dd></div>
+        <div><dt>Постов в неделю</dt><dd>${esc(String(a.rhythm.posts_per_week ?? "—").replace(".", ","))}</dd></div>
+      </dl></div></section>`;
+
+  // направления
+  h += `<section class="section"><div class="sec-head"><h2>Три направления</h2><p>Нажмите на номер факта, чтобы увидеть цифры, на которых основан вывод.</p></div><div class="directions">`;
+  st.directions.forEach((d, i) => {
+    h += `<article class="panel direction"><div class="num">${i + 1}</div><h3>${esc(d.title)}</h3><p>${esc(d.why)}</p>
+      <ul>${(d.actions || []).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
+      ${d.kpi ? `<div class="kpi">Как измерить: ${esc(d.kpi)}</div>` : ""}<div>${chips(d.facts)}</div></article>`;
+  });
+  h += `</div></section>`;
+
+  // конвейер агентов
+  h += `<section class="section"><div class="sec-head"><h2>Как работали агенты</h2>
+    <p>Три агента независимо предлагают идеи. Затем программа отбрасывает идеи без ссылок на реальные факты, а агент-критик проверяет остальные.</p></div><div class="pipeline">`;
+  for (const ag of st.agents) {
+    h += `<div class="panel agent"><h3>${esc(ag.name)} <span class="temp">t = ${String(ag.temperature).replace(".", ",")}</span></h3>
+      <p class="meta">видел фактов: ${ag.facts_seen}${ag.fallback ? " · LLM недоступна, сработали правила" : ""}</p><ul>`;
+    for (const r of ag.recommendations) {
+      const rej = rejectedMap[r.rec_id];
+      const cls = accepted.has(r.rec_id) ? "acc" : rej ? "rej" : "";
+      h += `<li class="${cls}" title="${esc(rej ? rej.reject_reason : r.action)}">${esc(r.title)}</li>`;
+    }
+    h += `</ul></div>`;
+  }
+  h += `<div class="flow-arrow" aria-hidden="true">→</div><div class="panel critic"><h3>Агент-критик</h3>
+    <div class="big">${st.accepted.length}<span> из ${totalRecs}</span></div><p class="meta">идей принято</p>
+    <p class="meta">Без ссылок на факты отброшено: ${pre}<br>Отклонено критиком: ${byCritic}</p></div></div>`;
+  if (st.rejected.length) {
+    h += `<details class="rejected"><summary>Почему отклонены ${st.rejected.length} идеи</summary><ul>`;
+    for (const r of st.rejected) h += `<li><s>${esc(r.title)}</s> — ${esc(r.reject_reason)} <span class="m">(${esc(r.rejected_by)})</span></li>`;
+    h += `</ul></details>`;
+  }
+  h += `</section>`;
+
+  // контент-план
+  if (st.content_plan.length) {
+    h += `<section class="section"><div class="sec-head"><h2>План на две недели</h2></div><div class="plan">`;
+    for (const p of st.content_plan) {
+      h += `<div class="plan-item"><div class="day">День ${esc(p.day)}</div><div class="when">${esc(p.time)}, ${esc(p.format)}</div>
+        <div class="topic">${esc(p.topic)}</div><div class="hook">${esc(p.hook)}</div></div>`;
+    }
+    h += `</div></section>`;
+  }
+
+  // эксперименты и чего избегать
+  h += `<section class="section two">`;
+  h += `<div class="panel"><h2>Что проверить экспериментом</h2>${st.experiments.length ? `<ol class="exp">${st.experiments.map((e) =>
+    `<li>${esc(e.hypothesis)}<div class="k">${esc(e.how)} Метрика: ${esc(e.metric)}. Срок: ${esc(e.duration)}.</div></li>`).join("")}</ol>` : "<p>Все выводы достаточно надёжны — экспериментов не требуется.</p>"}</div>`;
+  h += `<div class="panel"><h2>Чего избегать</h2>${st.avoid.length ? `<ul class="exp">${st.avoid.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : "<p>Явно слабых тем и форматов не найдено.</p>"}</div>`;
+  h += `</section>`;
+
+  // аналитика
+  h += `<section class="section"><div class="sec-head"><h2>Что показывают данные</h2>
+    <p>Виральность — охват поста относительно обычного охвата канала. 1× — как обычно, 2× — вдвое больше. Бледные строки — мало постов, вывод ненадёжен.</p></div><div class="charts">`;
+  h += `<div class="panel chart"><h3>Охват по неделям</h3><p class="cap">медиана просмотров поста</p>${lineChart(a.trend.weekly)}</div>`;
+  h += `<div class="panel chart"><h3>Формат</h3><p class="cap">медианная виральность</p>${divergingBars(a.by_media)}</div>`;
+  h += `<div class="panel chart"><h3>Время публикации, МСК</h3><p class="cap">медианная виральность</p>${divergingBars(a.by_slot)}</div>`;
+  h += `<div class="panel chart"><h3>День недели</h3><p class="cap">медианная виральность</p>${divergingBars(a.by_weekday)}</div>`;
+  h += `<div class="panel chart"><h3>Длина поста</h3><p class="cap">медианная виральность</p>${divergingBars(a.by_length)}</div>`;
+  h += `<div class="panel chart"><h3>Форматы у конкурентов</h3><p class="cap">медианная виральность</p>${divergingBars(an.competitor_media)}</div>`;
+  h += `</div></section>`;
+
+  // бенчмарк
+  h += `<section class="section"><div class="sec-head"><h2>Сравнение с конкурентами</h2></div><div class="panel table-wrap"><table>
+    <thead><tr><th>Канал</th><th class="n">Подписчики</th><th class="n">Постов в неделю</th><th class="n">Медианный охват</th><th class="n">ERR</th><th class="n">ER</th><th class="n">Тренд в месяц</th><th>Лучший формат</th></tr></thead><tbody>`;
+  for (const b of an.benchmark) {
+    if (b.empty) continue;
+    h += `<tr class="${b.role === "author" ? "me" : ""}"><td>${esc(b.title)}</td><td class="n">${fmtInt(b.subscribers)}</td><td class="n">${esc(String(b.posts_per_week ?? "—").replace(".", ","))}</td>
+      <td class="n">${fmtInt(b.median_views)}</td><td class="n">${fmtPct(b.err)}</td><td class="n">${fmtPct(b.median_er)}</td><td class="n">${signPct(b.monthly_change)}</td><td>${esc(b.top_format ?? "—")}</td></tr>`;
+  }
+  h += `</tbody></table></div></section>`;
+
+  // темы
+  const tp = an.topic_performance;
+  if (tp.ok) {
+    const lbls = (arr) => new Set(arr.map((r) => r.label));
+    const gaps = lbls(tp.gaps), strong = lbls(tp.strong), weak = lbls(tp.weak);
+    const maxShare = Math.max(0.01, ...tp.table.map((r) => Math.max(r.author.share, r.competitors ? r.competitors.share : 0)));
+    h += `<section class="section"><div class="sec-head"><h2>Темы</h2><p>Найдены автоматически: TF-IDF и NMF по текстам всех каналов.</p></div><div class="panel table-wrap"><table>
+      <thead><tr><th>Тема</th><th>Доля у вас</th><th>Доля у конкурентов</th><th class="n">Виральность у вас</th><th class="n">У конкурентов</th></tr></thead><tbody>`;
+    for (const r of tp.table) {
+      const tag = gaps.has(r.label) ? `<span class="tag gap">свободная ниша</span>` : strong.has(r.label) ? `<span class="tag strong">сильная</span>` : weak.has(r.label) ? `<span class="tag weak">слабая</span>` : "";
+      const bar = (v, c) => `<span class="share ${c}" style="width:${Math.round((v / maxShare) * 80)}px"></span>${fmtPct(v, 0)}`;
+      h += `<tr><td>${esc(r.label)}${tag}</td><td>${bar(r.author.share, "")}</td><td>${r.competitors ? bar(r.competitors.share, "c") : "—"}</td>
+        <td class="n">${fmtX(r.author.median_virality)}</td><td class="n">${r.competitors ? fmtX(r.competitors.median_virality) : "—"}</td></tr>`;
+    }
+    h += `</tbody></table></div></section>`;
+  }
+
+  // посты
+  const postList = (arr, up) => `<ul class="posts">${arr.map((p) => `<li><span class="v ${up ? "up" : "down"}">${fmtX(p.virality)}</span>
+      <span class="m">${esc(p.date)} · ${esc(p.media_type)} · ${fmtInt(p.views)} просмотров${p.url ? ` · <a href="${esc(p.url)}" target="_blank" rel="noopener">открыть</a>` : ""}</span>
+      <p class="s">${esc(p.snippet || "без текста")}</p></li>`).join("")}</ul>`;
+  h += `<section class="section two"><div class="panel"><h2>Лучшие посты</h2>${postList(a.top_posts, true)}</div>
+        <div class="panel"><h2>Слабые посты</h2>${postList(a.flop_posts, false)}</div></section>`;
+
+  // фактическая база
+  h += `<section class="section"><details class="panel"><summary><h2 style="display:inline">Фактическая база (${an.facts.length})</h2></summary>
+    <ul class="facts-list">${an.facts.map((f) => `<li><b>${esc(f.id)}</b>${esc(f.text)} <span class="c">— ${esc(f.category)}, уверенность: ${esc(f.confidence)}</span></li>`).join("")}</ul></details></section>`;
+
+  const el = $("#result");
+  el.innerHTML = h;
+  el.hidden = false;
+  if (!noScroll) el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+}
+
+/* ---------- старт ---------- */
+function initStatic(S) {
+  const href = URL.createObjectURL(new Blob([S.report], { type: "text/markdown;charset=utf-8" }));
+  $("#demo").addEventListener("click", () => render(S.result, null, href));
+  $("#form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    showFormError("Это статическая демо-версия. Чтобы проанализировать свои каналы, запустите сервис — инструкция в репозитории на GitHub.");
+  });
+  const mode = $("#mode");
+  mode.textContent = "Статическое демо";
+  render(S.result, null, href, true);
+}
+
+async function init() {
+  if (window.VEKTOR_STATIC) {
+    makeSource($(".source[data-role=author]"), false);
+    makeSource($("#competitors"), true);
+    initStatic(window.VEKTOR_STATIC);
+    return;
+  }
+  makeSource($(".source[data-role=author]"), false);
+  makeSource($("#competitors"), true);
+  $("#add-comp").addEventListener("click", () => { makeSource($("#competitors"), true); toggleAdd(); });
+  $("#demo").addEventListener("click", () => startJob({ demo: true }));
+  $("#form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const author = readSource($(".source[data-role=author] .src-row"));
+    if (!(author.id || author.upload_id)) { showFormError("Укажите ваш канал или загрузите CSV."); return; }
+    const competitors = [...document.querySelectorAll("#competitors .src-row")].map(readSource).filter((s) => s.id || s.upload_id);
+    startJob({ author, competitors, max_posts: +$("#max-posts").value, vk_token: $("#vk-token").value.trim() || undefined });
+  });
+  try {
+    CONFIG = await (await fetch("/api/config")).json();
+  } catch (_) { /* интерфейс работает и без конфигурации */ }
+  const mode = $("#mode");
+  mode.textContent = CONFIG.llm.enabled ? `LLM: ${CONFIG.llm.model}` : "Офлайн-режим, без LLM";
+  mode.classList.toggle("on", CONFIG.llm.enabled);
+  updateVkToken();
+}
+
+init();
+
+</script>
+</body>
+</html>
